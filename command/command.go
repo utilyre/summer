@@ -23,7 +23,7 @@ func Execute(args []string) error {
 	}
 
 	for path, sum := range sums {
-		fmt.Printf("%x %s\n", sum, path)
+		fmt.Printf("%x\t%s\n", sum, path)
 	}
 
 	return nil
