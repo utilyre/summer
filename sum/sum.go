@@ -4,15 +4,25 @@ import (
 	"crypto/md5"
 	"fmt"
 	"sync"
+
+	"gihtub.com/utilyre/summer/fs"
 )
 
+const numDigesters int = 10
+
 type Checksum [md5.Size]byte
+
+type result struct {
+	path string
+	sum  Checksum
+	err  error
+}
 
 func MD5All(root string) (map[string]Checksum, error) {
 	done := make(chan struct{})
 	defer close(done)
 
-	paths, errc := walk(done, root)
+	paths, errc := fs.Walk(done, root)
 	results := make(chan *result)
 
 	var wg sync.WaitGroup
@@ -43,10 +53,4 @@ func MD5All(root string) (map[string]Checksum, error) {
 	}
 
 	return m, nil
-}
-
-type result struct {
-	path string
-	sum  Checksum
-	err  error
 }

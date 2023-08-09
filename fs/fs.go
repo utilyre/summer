@@ -1,12 +1,26 @@
-package sum
+package fs
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"path/filepath"
 )
 
-func walk(done <-chan struct{}, root string) (<-chan string, <-chan error) {
+type Error struct {
+	path string
+	err  error
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf("yielding %s failed since %s", e.path, e.err)
+}
+
+func (e *Error) Unwrap() error {
+	return e.err
+}
+
+func Walk(done <-chan struct{}, root string) (<-chan string, <-chan error) {
 	paths := make(chan string)
 	errc := make(chan error, 1)
 
@@ -15,7 +29,7 @@ func walk(done <-chan struct{}, root string) (<-chan string, <-chan error) {
 
 		errc <- filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
-				return err
+				return &Error{path: path, err: err}
 			}
 			if !d.Type().IsRegular() {
 				return nil
@@ -24,7 +38,7 @@ func walk(done <-chan struct{}, root string) (<-chan string, <-chan error) {
 			select {
 			case paths <- path:
 			case <-done:
-				return errors.New("walk cancelled")
+				return &Error{path: path, err: errors.New("walk cancelled")}
 			}
 			return nil
 		})

@@ -12,14 +12,12 @@ type DigestError struct {
 }
 
 func (e *DigestError) Error() string {
-	return fmt.Sprintf("digesting %s failed due to %s", e.path, e.err)
+	return fmt.Sprintf("digesting %s failed since %s", e.path, e.err)
 }
 
 func (e *DigestError) Unwrap() error {
 	return e.err
 }
-
-const numDigesters int = 10
 
 func digseter(done <-chan struct{}, paths <-chan string, out chan<- *result) {
 	for path := range paths {
