@@ -3,6 +3,7 @@ package sum
 import (
 	"crypto/md5"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -35,14 +36,14 @@ func MD5All(root string) (map[string]Sum, error) {
 	m := make(map[string]Sum)
 	for r := range results {
 		if r.err != nil {
-			return nil, r.err
+			return nil, fmt.Errorf("sum: %w", r.err)
 		}
 
 		m[r.path] = r.sum
 	}
 
 	if err := <-errc; err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sum: %w", err)
 	}
 
 	return m, nil
