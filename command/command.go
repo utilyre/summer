@@ -3,7 +3,6 @@ package command
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"gihtub.com/utilyre/summer/sum"
 )
@@ -13,15 +12,8 @@ func Execute(args []string) error {
 		return errors.New("too many arguments")
 	}
 
-	root := ""
-	if len(args) == 0 {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-
-		root = cwd
-	} else {
+	root := "."
+	if len(args) == 1 {
 		root = args[0]
 	}
 

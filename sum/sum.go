@@ -2,54 +2,29 @@ package sum
 
 import (
 	"crypto/md5"
-	"fmt"
-	"sync"
-
-	"gihtub.com/utilyre/summer/fs"
 )
 
-const numDigesters int = 10
+type Sum [md5.Size]byte
 
-type Checksum [md5.Size]byte
-
-type result struct {
-	path string
-	sum  Checksum
-	err  error
-}
-
-func MD5All(root string) (map[string]Checksum, error) {
+func MD5All(root string) (map[string]Sum, error) {
 	done := make(chan struct{})
 	defer close(done)
 
-	paths, errc := fs.Walk(done, root)
-	results := make(chan *result)
+	paths, errc := walk(done, root)
+	contents := read(done, paths)
+	sums := digest(done, contents)
 
-	var wg sync.WaitGroup
-	wg.Add(numDigesters)
-	for i := 0; i < numDigesters; i++ {
-		go func() {
-			digseter(done, paths, results)
-			wg.Done()
-		}()
-	}
-
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	m := make(map[string]Checksum)
-	for r := range results {
-		if r.err != nil {
-			return nil, fmt.Errorf("sum: %w", r.err)
+	m := make(map[string]Sum)
+	for sum := range sums {
+		if sum.err != nil {
+			continue
 		}
 
-		m[r.path] = r.sum
+		m[sum.data.path] = sum.data.sum
 	}
 
 	if err := <-errc; err != nil {
-		return nil, fmt.Errorf("sum: %w", err)
+		return nil, err
 	}
 
 	return m, nil
