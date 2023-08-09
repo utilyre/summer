@@ -2,11 +2,7 @@ package sum
 
 import (
 	"crypto/md5"
-	"errors"
 	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
 	"sync"
 )
 
@@ -49,66 +45,8 @@ func MD5All(root string) (map[string]Checksum, error) {
 	return m, nil
 }
 
-const numDigesters int = 10
-
-type DigestError struct {
-	path string
-	err  error
-}
-
-func (e *DigestError) Error() string {
-	return fmt.Sprintf("digesting %s failed due to %s", e.path, e.err)
-}
-
-func (e *DigestError) Unwrap() error {
-	return e.err
-}
-
 type result struct {
 	path string
 	sum  Checksum
 	err  error
-}
-
-func walk(done <-chan struct{}, root string) (<-chan string, <-chan error) {
-	paths := make(chan string)
-	errc := make(chan error, 1)
-
-	go func() {
-		defer close(paths)
-
-		errc <- filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if !d.Type().IsRegular() {
-				return nil
-			}
-
-			select {
-			case paths <- path:
-			case <-done:
-				return errors.New("walk cancelled")
-			}
-			return nil
-		})
-	}()
-
-	return paths, errc
-}
-
-func digseter(done <-chan struct{}, paths <-chan string, out chan<- *result) {
-	for path := range paths {
-		data, err := os.ReadFile(path)
-
-		select {
-		case out <- &result{
-			path: path,
-			sum:  md5.Sum(data),
-			err:  &DigestError{path: path, err: err},
-		}:
-		case <-done:
-			return
-		}
-	}
 }
