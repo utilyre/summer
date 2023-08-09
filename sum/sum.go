@@ -10,9 +10,9 @@ import (
 	"sync"
 )
 
-type Sum [md5.Size]byte
+type Checksum [md5.Size]byte
 
-func MD5All(root string) (map[string]Sum, error) {
+func MD5All(root string) (map[string]Checksum, error) {
 	done := make(chan struct{})
 	defer close(done)
 
@@ -33,7 +33,7 @@ func MD5All(root string) (map[string]Sum, error) {
 		close(results)
 	}()
 
-	m := make(map[string]Sum)
+	m := make(map[string]Checksum)
 	for r := range results {
 		if r.err != nil {
 			return nil, fmt.Errorf("sum: %w", r.err)
@@ -51,9 +51,22 @@ func MD5All(root string) (map[string]Sum, error) {
 
 const numDigesters int = 10
 
+type DigestError struct {
+	path string
+	err  error
+}
+
+func (e *DigestError) Error() string {
+	return fmt.Sprintf("digesting %s failed due to %s", e.path, e.err)
+}
+
+func (e *DigestError) Unwrap() error {
+	return e.err
+}
+
 type result struct {
 	path string
-	sum  Sum
+	sum  Checksum
 	err  error
 }
 
@@ -89,7 +102,11 @@ func digseter(done <-chan struct{}, paths <-chan string, out chan<- *result) {
 		data, err := os.ReadFile(path)
 
 		select {
-		case out <- &result{path: path, sum: md5.Sum(data), err: err}:
+		case out <- &result{
+			path: path,
+			sum:  md5.Sum(data),
+			err:  &DigestError{path: path, err: err},
+		}:
 		case <-done:
 			return
 		}
