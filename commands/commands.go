@@ -3,19 +3,29 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"gihtub.com/utilyre/summer/sum"
 )
 
 func Execute(args []string) error {
-	if len(args) < 1 {
-		return errors.New("not enough arguments")
-	}
 	if len(args) > 1 {
 		return errors.New("too many arguments")
 	}
 
-	sums, err := sum.MD5All(args[0])
+	root := ""
+	if len(args) == 0 {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		root = cwd
+	} else {
+		root = args[0]
+	}
+
+	sums, err := sum.MD5All(root)
 	if err != nil {
 		return err
 	}
