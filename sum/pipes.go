@@ -8,14 +8,9 @@ import (
 	"path/filepath"
 )
 
-type result[T any] struct {
-	data T
-	err  error
-}
-
 type file struct {
-	path    string
-	content []byte
+	path string
+	data []byte
 }
 
 type checksum struct {
@@ -23,14 +18,15 @@ type checksum struct {
 	sum  Sum
 }
 
-func walk(ctx context.Context, root string) (<-chan string, chan error) {
+func walk(ctx context.Context, root string) (<-chan string, <-chan error) {
 	out := make(chan string)
 	errc := make(chan error, 1)
 
 	go func() {
 		defer close(out)
+		defer close(errc)
 
-		errc <- filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -45,66 +41,59 @@ func walk(ctx context.Context, root string) (<-chan string, chan error) {
 			}
 			return nil
 		})
+		if err != nil {
+			errc <- err
+			return
+		}
 	}()
 
 	return out, errc
 }
 
-func read(ctx context.Context, paths <-chan string) <-chan result[file] {
-	out := make(chan result[file])
+func read(ctx context.Context, in <-chan string) (<-chan file, <-chan error) {
+	out := make(chan file)
+	errc := make(chan error, 1)
 
 	go func() {
 		defer close(out)
+		defer close(errc)
 
-		for path := range paths {
-			rout := result[file]{}
-			content, err := os.ReadFile(path)
-
-			if err == nil {
-				rout.data = file{
-					path:    path,
-					content: content,
-				}
-			} else {
-				rout.err = err
+		for p := range in {
+			data, err := os.ReadFile(p)
+			if err != nil {
+				errc <- err
+				return
 			}
 
 			select {
-			case out <- rout:
+			case out <- file{path: p, data: data}:
 			case <-ctx.Done():
+				errc <- ctx.Err()
 				return
 			}
 		}
 	}()
 
-	return out
+	return out, errc
 }
 
-func digest(ctx context.Context, contents <-chan result[file]) <-chan result[checksum] {
-	out := make(chan result[checksum])
+func digest(ctx context.Context, in <-chan file) (<-chan checksum, <-chan error) {
+	out := make(chan checksum)
+	errc := make(chan error, 1)
 
 	go func() {
 		defer close(out)
+		defer close(errc)
 
-		for rin := range contents {
-			rout := result[checksum]{}
-
-			if rin.err == nil {
-				rout.data = checksum{
-					path: rin.data.path,
-					sum:  md5.Sum(rin.data.content),
-				}
-			} else {
-				rout.err = rin.err
-			}
-
+		for f := range in {
 			select {
-			case out <- rout:
+			case out <- checksum{path: f.path, sum: md5.Sum(f.data)}:
 			case <-ctx.Done():
+				errc <- ctx.Err()
 				return
 			}
 		}
 	}()
 
-	return out
+	return out, errc
 }
