@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	numReaders   int = 5
+	numReaders   int = 2
 	numDigesters int = 5
 )
 
