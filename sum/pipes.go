@@ -1,6 +1,7 @@
 package sum
 
 import (
+	"context"
 	"crypto/md5"
 	"errors"
 	"io/fs"
@@ -23,7 +24,7 @@ type checksum struct {
 	sum  Sum
 }
 
-func walk(done <-chan struct{}, root string) (<-chan string, chan error) {
+func walk(ctx context.Context, root string) (<-chan string, chan error) {
 	out := make(chan string)
 	errc := make(chan error, 1)
 
@@ -40,7 +41,7 @@ func walk(done <-chan struct{}, root string) (<-chan string, chan error) {
 
 			select {
 			case out <- path:
-			case <-done:
+			case <-ctx.Done():
 				return errors.New("walk cancelled")
 			}
 			return nil
@@ -50,7 +51,7 @@ func walk(done <-chan struct{}, root string) (<-chan string, chan error) {
 	return out, errc
 }
 
-func read(done <-chan struct{}, paths <-chan string) <-chan result[file] {
+func read(ctx context.Context, paths <-chan string) <-chan result[file] {
 	out := make(chan result[file])
 
 	go func() {
@@ -71,7 +72,7 @@ func read(done <-chan struct{}, paths <-chan string) <-chan result[file] {
 
 			select {
 			case out <- rout:
-			case <-done:
+			case <-ctx.Done():
 				return
 			}
 		}
@@ -80,7 +81,7 @@ func read(done <-chan struct{}, paths <-chan string) <-chan result[file] {
 	return out
 }
 
-func digest(done <-chan struct{}, contents <-chan result[file]) <-chan result[checksum] {
+func digest(ctx context.Context, contents <-chan result[file]) <-chan result[checksum] {
 	out := make(chan result[checksum])
 
 	go func() {
@@ -100,7 +101,7 @@ func digest(done <-chan struct{}, contents <-chan result[file]) <-chan result[ch
 
 			select {
 			case out <- rout:
-			case <-done:
+			case <-ctx.Done():
 				return
 			}
 		}
