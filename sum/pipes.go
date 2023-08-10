@@ -3,7 +3,6 @@ package sum
 import (
 	"context"
 	"crypto/md5"
-	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -42,7 +41,7 @@ func walk(ctx context.Context, root string) (<-chan string, chan error) {
 			select {
 			case out <- path:
 			case <-ctx.Done():
-				return errors.New("walk cancelled")
+				return ctx.Err()
 			}
 			return nil
 		})
