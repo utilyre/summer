@@ -3,6 +3,7 @@ package sum
 import (
 	"context"
 	"crypto/md5"
+	"fmt"
 
 	"gihtub.com/utilyre/summer/channel"
 )
@@ -42,7 +43,7 @@ func MD5All(root string) (map[string]Sum, error) {
 
 	for err := range errc {
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("sum: %w", err)
 		}
 	}
 	return m, nil
