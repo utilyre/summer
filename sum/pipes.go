@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type file struct {
@@ -18,15 +20,13 @@ type checksum struct {
 	sum  Sum
 }
 
-func walk(ctx context.Context, root string) (<-chan string, <-chan error) {
+func walk(ctx context.Context, g *errgroup.Group, root string) <-chan string {
 	out := make(chan string)
-	errc := make(chan error, 1)
 
-	go func() {
+	g.Go(func() error {
 		defer close(out)
-		defer close(errc)
 
-		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -41,59 +41,52 @@ func walk(ctx context.Context, root string) (<-chan string, <-chan error) {
 			}
 			return nil
 		})
-		if err != nil {
-			errc <- err
-			return
-		}
-	}()
+	})
 
-	return out, errc
+	return out
 }
 
-func read(ctx context.Context, in <-chan string) (<-chan file, <-chan error) {
+func read(ctx context.Context, g *errgroup.Group, in <-chan string) <-chan file {
 	out := make(chan file)
-	errc := make(chan error, 1)
 
-	go func() {
+	g.Go(func() error {
 		defer close(out)
-		defer close(errc)
 
 		for p := range in {
 			data, err := os.ReadFile(p)
 			if err != nil {
-				errc <- err
-				return
+				return err
 			}
 
 			select {
 			case out <- file{path: p, data: data}:
 			case <-ctx.Done():
-				errc <- ctx.Err()
-				return
+				return ctx.Err()
 			}
 		}
-	}()
 
-	return out, errc
+		return nil
+	})
+
+	return out
 }
 
-func digest(ctx context.Context, in <-chan file) (<-chan checksum, <-chan error) {
+func digest(ctx context.Context, g *errgroup.Group, in <-chan file) <-chan checksum {
 	out := make(chan checksum)
-	errc := make(chan error, 1)
 
-	go func() {
+	g.Go(func() error {
 		defer close(out)
-		defer close(errc)
 
 		for f := range in {
 			select {
 			case out <- checksum{path: f.path, sum: md5.Sum(f.data)}:
 			case <-ctx.Done():
-				errc <- ctx.Err()
-				return
+				return ctx.Err()
 			}
 		}
-	}()
 
-	return out, errc
+		return nil
+	})
+
+	return out
 }
