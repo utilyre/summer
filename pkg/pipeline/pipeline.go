@@ -53,18 +53,16 @@ func New(opts ...Option) (*Pipeline, error) {
 }
 
 func (pl *Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
-	ch := in
-
 	for _, info := range pl.pipes {
 		outs := make([]<-chan any, info.workers)
 		for i := 0; i < info.workers; i++ {
-			outs[i] = info.pipe.Pipe(ctx, ch)
+			outs[i] = info.pipe.Pipe(ctx, in)
 		}
 
-		ch = aggregateChans(outs)
+		in = aggregateChans(outs)
 	}
 
-	return ch
+	return in
 }
 
 func aggregateChans(cs []<-chan any) <-chan any {
