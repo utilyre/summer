@@ -6,8 +6,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-
-	"golang.org/x/sync/errgroup"
 )
 
 type file struct {
@@ -20,13 +18,13 @@ type checksum struct {
 	sum  Sum
 }
 
-func walk(ctx context.Context, g *errgroup.Group, root string) <-chan string {
-	out := make(chan string)
+func walk(ctx context.Context, root string) <-chan any {
+	out := make(chan any)
 
-	g.Go(func() error {
+	go func() {
 		defer close(out)
 
-		return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -40,53 +38,53 @@ func walk(ctx context.Context, g *errgroup.Group, root string) <-chan string {
 				return ctx.Err()
 			}
 			return nil
-		})
-	})
+		}); err != nil {
+			panic("TODO")
+		}
+	}()
 
 	return out
 }
 
-func read(ctx context.Context, g *errgroup.Group, in <-chan string) <-chan file {
-	out := make(chan file)
+func read(ctx context.Context, in <-chan any) <-chan any {
+	out := make(chan any)
 
-	g.Go(func() error {
+	go func() {
 		defer close(out)
 
-		for p := range in {
-			data, err := os.ReadFile(p)
+		for v := range in {
+			name := v.(string)
+			data, err := os.ReadFile(name)
 			if err != nil {
-				return err
+				panic("TODO")
 			}
 
 			select {
-			case out <- file{path: p, data: data}:
+			case out <- file{path: name, data: data}:
 			case <-ctx.Done():
-				return ctx.Err()
+				panic("TODO")
 			}
 		}
-
-		return nil
-	})
+	}()
 
 	return out
 }
 
-func digest(ctx context.Context, g *errgroup.Group, in <-chan file) <-chan checksum {
-	out := make(chan checksum)
+func digest(ctx context.Context, in <-chan any) <-chan any {
+	out := make(chan any)
 
-	g.Go(func() error {
+	go func() {
 		defer close(out)
 
-		for f := range in {
+		for v := range in {
+			f := v.(file)
 			select {
 			case out <- checksum{path: f.path, sum: md5.Sum(f.data)}:
 			case <-ctx.Done():
-				return ctx.Err()
+				panic("TODO")
 			}
 		}
-
-		return nil
-	})
+	}()
 
 	return out
 }

@@ -3,10 +3,8 @@ package sum
 import (
 	"context"
 	"crypto/md5"
-	"fmt"
 
-	"gihtub.com/utilyre/summer/channel"
-	"golang.org/x/sync/errgroup"
+	"gihtub.com/utilyre/summer/pkg/pipeline"
 )
 
 const (
@@ -17,7 +15,24 @@ const (
 type Sum [md5.Size]byte
 
 func MD5All(root string) (map[string]Sum, error) {
-	g, ctx := errgroup.WithContext(context.Background())
+	pl, err := pipeline.New(
+		pipeline.WithPipeFunc(read, numReaders),
+		pipeline.WithPipeFunc(digest, numDigesters),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	out := pl.Pipe(context.TODO(), walk(context.TODO(), root))
+	m := make(map[string]Sum)
+	for v := range out {
+		cs := v.(checksum)
+		m[cs.path] = cs.sum
+	}
+
+	return m, nil
+
+	/* g, ctx := errgroup.WithContext(context.Background())
 
 	pathc := walk(ctx, g, root)
 
@@ -43,5 +58,5 @@ func MD5All(root string) (map[string]Sum, error) {
 	if err := g.Wait(); err != nil {
 		return nil, fmt.Errorf("sum: %w", err)
 	}
-	return m, nil
+	return m, nil */
 }
