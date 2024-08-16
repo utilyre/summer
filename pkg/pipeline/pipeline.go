@@ -1,6 +1,9 @@
 package pipeline
 
-import "context"
+import (
+	"context"
+	"sync"
+)
 
 type Pipe interface {
 	Pipe(ctx context.Context, in <-chan any) (out <-chan any)
@@ -13,19 +16,77 @@ func (f PipeFunc) Pipe(ctx context.Context, in <-chan any) <-chan any {
 }
 
 type Pipeline struct {
-	pipes []Pipe
+	pipes []pipeInfo
 }
 
-func New(pipes ...Pipe) *Pipeline {
-	return &Pipeline{pipes: pipes}
+type Option func(o *options) error
+
+type options struct {
+	pipes []pipeInfo
+}
+
+type pipeInfo struct {
+	pipe    Pipe
+	workers int
+}
+
+func WithPipe(pipe Pipe, workers int) Option {
+	return func(o *options) error {
+		o.pipes = append(o.pipes, pipeInfo{pipe, workers})
+		return nil
+	}
+}
+
+func WithPipeFunc(pipe PipeFunc, workers int) Option {
+	return WithPipe(pipe, workers)
+}
+
+func New(opts ...Option) (*Pipeline, error) {
+	o := &options{}
+	for _, opt := range opts {
+		if err := opt(o); err != nil {
+			return nil, err
+		}
+	}
+
+	return &Pipeline{pipes: o.pipes}, nil
 }
 
 func (pl *Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	ch := in
 
-	for _, pipe := range pl.pipes {
-		ch = pipe.Pipe(ctx, ch)
+	for _, info := range pl.pipes {
+		outs := make([]<-chan any, info.workers)
+		for i := 0; i < info.workers; i++ {
+			outs[i] = info.pipe.Pipe(ctx, ch)
+		}
+
+		ch = aggregateChans(outs)
 	}
 
 	return ch
+}
+
+func aggregateChans(cs []<-chan any) <-chan any {
+	out := make(chan any)
+
+	var wg sync.WaitGroup
+	wg.Add(len(cs))
+
+	for _, c := range cs {
+		go func(c <-chan any) {
+			for n := range c {
+				out <- n
+			}
+
+			wg.Done()
+		}(c)
+	}
+
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+
+	return out
 }
