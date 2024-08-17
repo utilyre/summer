@@ -6,20 +6,22 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type walkerPipe struct {
+	g    *errgroup.Group
 	root string
 }
 
 func (wp walkerPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 	out := make(chan any)
 
-	go func() {
+	wp.g.Go(func() error {
 		defer close(out)
 
-		// TODO: handle error
-		filepath.WalkDir(wp.root, func(
+		return filepath.WalkDir(wp.root, func(
 			name string,
 			dirEntry fs.DirEntry,
 			err error,
@@ -38,12 +40,14 @@ func (wp walkerPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 			}
 			return nil
 		})
-	}()
+	})
 
 	return out
 }
 
-type readerPipe struct{}
+type readerPipe struct {
+	g *errgroup.Group
+}
 
 type fileInfo struct {
 	name string
@@ -53,28 +57,32 @@ type fileInfo struct {
 func (rp readerPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	out := make(chan any)
 
-	go func() {
+	rp.g.Go(func() error {
 		defer close(out)
 
 		for v := range in {
 			name := v.(string)
 			data, err := os.ReadFile(name)
 			if err != nil {
-				panic("TODO")
+				return err
 			}
 
 			select {
 			case out <- fileInfo{name, data}:
 			case <-ctx.Done():
-				panic("TODO")
+				return ctx.Err()
 			}
 		}
-	}()
+
+		return nil
+	})
 
 	return out
 }
 
-type digesterPipe struct{}
+type digesterPipe struct {
+	g *errgroup.Group
+}
 
 type ChecksumInfo struct {
 	Name     string
@@ -84,7 +92,7 @@ type ChecksumInfo struct {
 func (dp digesterPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	out := make(chan any)
 
-	go func() {
+	dp.g.Go(func() error {
 		defer close(out)
 
 		for v := range in {
@@ -94,10 +102,12 @@ func (dp digesterPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 			select {
 			case out <- ChecksumInfo{Name: file.name, Checksum: sum[:]}:
 			case <-ctx.Done():
-				panic("TODO")
+				return ctx.Err()
 			}
 		}
-	}()
+
+		return nil
+	})
 
 	return out
 }
