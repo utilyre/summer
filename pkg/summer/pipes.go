@@ -50,7 +50,7 @@ func (wp walkerPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 	return out
 }
 
-type readerPipe struct {
+type readPipe struct {
 	g *errgroup.Group
 }
 
@@ -59,7 +59,7 @@ type fileInfo struct {
 	r    io.ReadCloser
 }
 
-func (rp readerPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
+func (rp readPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	out := make(chan any)
 
 	rp.g.Go(func() error {
@@ -85,7 +85,7 @@ func (rp readerPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	return out
 }
 
-type digesterPipe struct {
+type digestPipe struct {
 	g    *errgroup.Group
 	algo Algorithm
 }
@@ -95,7 +95,7 @@ type Checksum struct {
 	Hash []byte
 }
 
-func (dp digesterPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
+func (dp digestPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	out := make(chan any)
 
 	dp.g.Go(func() error {

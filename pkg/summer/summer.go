@@ -20,9 +20,9 @@ const (
 type Option func(o *options) error
 
 type options struct {
-	algo            Algorithm
-	readerWorkers   int
-	digesterWorkers int
+	algo          Algorithm
+	readWorkers   int
+	digestWorkers int
 }
 
 func WithAlgorithm(algo Algorithm) Option {
@@ -32,24 +32,24 @@ func WithAlgorithm(algo Algorithm) Option {
 	}
 }
 
-func WithReaderWorkers(workers int) Option {
+func WithReadWorkers(workers int) Option {
 	return func(o *options) error {
 		if workers <= 0 {
-			return errors.New("number of reader workers must be positive")
+			return errors.New("number of read workers must be positive")
 		}
 
-		o.readerWorkers = workers
+		o.readWorkers = workers
 		return nil
 	}
 }
 
-func WithDigesterWorkers(workers int) Option {
+func WithDigestWorkers(workers int) Option {
 	return func(o *options) error {
 		if workers <= 0 {
-			return errors.New("number of digester workers must be positive")
+			return errors.New("number of digest workers must be positive")
 		}
 
-		o.digesterWorkers = workers
+		o.digestWorkers = workers
 		return nil
 	}
 }
@@ -60,9 +60,9 @@ func SumTree(
 	opts ...Option,
 ) ([]Checksum, error) {
 	o := &options{
-		algo:            AlgorithmMD5,
-		readerWorkers:   1,
-		digesterWorkers: 1,
+		algo:          AlgorithmMD5,
+		readWorkers:   1,
+		digestWorkers: 1,
 	}
 	for _, opt := range opts {
 		if err := opt(o); err != nil {
@@ -73,8 +73,8 @@ func SumTree(
 	g, ctx := errgroup.WithContext(ctx)
 
 	var pl pipeline.Pipeline
-	pl.Append(o.readerWorkers, readerPipe{g})
-	pl.Append(o.digesterWorkers, digesterPipe{g, o.algo})
+	pl.Append(o.readWorkers, readPipe{g})
+	pl.Append(o.digestWorkers, digestPipe{g, o.algo})
 	out := pl.Pipe(ctx, walkerPipe{g, root}.Pipe(ctx, nil))
 
 	var checksums []Checksum
