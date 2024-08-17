@@ -18,7 +18,7 @@ func Execute(args []string) error {
 		root = args[0]
 	}
 
-	checksums, err := summer.SumTree(context.Background(), root, summer.AlgorithmMD5)
+	checksums, err := summer.SumTree(context.Background(), root)
 	if err != nil {
 		return err
 	}
