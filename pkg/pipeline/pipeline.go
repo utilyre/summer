@@ -19,37 +19,22 @@ type Pipeline struct {
 	pipes []pipeInfo
 }
 
-type Option func(o *options) error
-
-type options struct {
-	pipes []pipeInfo
-}
-
 type pipeInfo struct {
-	pipe    Pipe
 	workers int
+	pipe    Pipe
 }
 
-func WithPipe(pipe Pipe, workers int) Option {
-	return func(o *options) error {
-		o.pipes = append(o.pipes, pipeInfo{pipe, workers})
-		return nil
-	}
-}
-
-func WithPipeFunc(pipe PipeFunc, workers int) Option {
-	return WithPipe(pipe, workers)
-}
-
-func New(opts ...Option) (*Pipeline, error) {
-	o := &options{}
-	for _, opt := range opts {
-		if err := opt(o); err != nil {
-			return nil, err
-		}
+func (pl *Pipeline) Append(workers int, pipe Pipe) {
+	if workers <= 0 {
+		// TODO: write test for this
+		panic("pipeline error: non-positive pipe workers")
 	}
 
-	return &Pipeline{pipes: o.pipes}, nil
+	pl.pipes = append(pl.pipes, pipeInfo{workers, pipe})
+}
+
+func (pl *Pipeline) AppendFunc(workers int, pipe PipeFunc) {
+	pl.Append(workers, pipe)
 }
 
 func (pl *Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
