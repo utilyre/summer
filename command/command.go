@@ -18,13 +18,13 @@ func Execute(args []string) error {
 		root = args[0]
 	}
 
-	sums, err := summer.SumTree(context.Background(), root, summer.AlgorithmMD5)
+	checksums, err := summer.SumTree(context.Background(), root, summer.AlgorithmMD5)
 	if err != nil {
 		return err
 	}
 
-	for _, info := range sums {
-		fmt.Printf("%x  %s\n", info.Checksum, info.Name)
+	for _, cs := range checksums {
+		fmt.Printf("%x  %s\n", cs.Hash, cs.Name)
 	}
 
 	return nil

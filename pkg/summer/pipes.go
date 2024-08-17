@@ -84,9 +84,9 @@ type digesterPipe struct {
 	g *errgroup.Group
 }
 
-type ChecksumInfo struct {
-	Name     string
-	Checksum []byte
+type Checksum struct {
+	Name string
+	Hash []byte
 }
 
 func (dp digesterPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
@@ -100,7 +100,7 @@ func (dp digesterPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 			sum := md5.Sum(file.data)
 
 			select {
-			case out <- ChecksumInfo{Name: file.name, Checksum: sum[:]}:
+			case out <- Checksum{Name: file.name, Hash: sum[:]}:
 			case <-ctx.Done():
 				return ctx.Err()
 			}

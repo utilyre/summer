@@ -17,7 +17,7 @@ func SumTree(
 	ctx context.Context,
 	root string,
 	algo Algorithm,
-) ([]ChecksumInfo, error) {
+) ([]Checksum, error) {
 	g, ctx := errgroup.WithContext(ctx)
 
 	var pl pipeline.Pipeline
@@ -25,9 +25,9 @@ func SumTree(
 	pl.Append( /* TODO: config */ 5, digesterPipe{g})
 	out := pl.Pipe(ctx, walkerPipe{g, root}.Pipe(ctx, nil))
 
-	var checksums []ChecksumInfo
+	var checksums []Checksum
 	for v := range out {
-		info := v.(ChecksumInfo)
+		info := v.(Checksum)
 		checksums = append(checksums, info)
 	}
 
