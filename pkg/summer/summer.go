@@ -11,6 +11,9 @@ type Algorithm int
 
 const (
 	AlgorithmMD5 Algorithm = iota + 1
+	AlgorithmSha1
+	AlgorithmSha256
+	AlgorithmSha512
 )
 
 func SumTree(
@@ -22,7 +25,7 @@ func SumTree(
 
 	var pl pipeline.Pipeline
 	pl.Append( /* TODO: config */ 2, readerPipe{g})
-	pl.Append( /* TODO: config */ 5, digesterPipe{g})
+	pl.Append( /* TODO: config */ 5, digesterPipe{g, algo})
 	out := pl.Pipe(ctx, walkerPipe{g, root}.Pipe(ctx, nil))
 
 	var checksums []Checksum

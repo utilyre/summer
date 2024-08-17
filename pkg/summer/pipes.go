@@ -3,6 +3,10 @@ package summer
 import (
 	"context"
 	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
+	"hash"
 	"io"
 	"io/fs"
 	"os"
@@ -82,7 +86,8 @@ func (rp readerPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 }
 
 type digesterPipe struct {
-	g *errgroup.Group
+	g    *errgroup.Group
+	algo Algorithm
 }
 
 type Checksum struct {
@@ -99,7 +104,18 @@ func (dp digesterPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 		for v := range in {
 			file := v.(fileInfo)
 
-			hash := md5.New()
+			var hash hash.Hash
+			switch dp.algo {
+			case AlgorithmMD5:
+				hash = md5.New()
+			case AlgorithmSha1:
+				hash = sha1.New()
+			case AlgorithmSha256:
+				hash = sha256.New()
+			case AlgorithmSha512:
+				hash = sha512.New()
+			}
+
 			if _, err := io.Copy(hash, file.r); err != nil {
 				return err
 			}
