@@ -16,6 +16,8 @@ func (f PipeFunc) Pipe(ctx context.Context, in <-chan any) <-chan any {
 }
 
 type Pipeline struct {
+	AggregBufCap int
+
 	pipes []pipeInfo
 }
 
@@ -36,21 +38,21 @@ func (pl *Pipeline) AppendFunc(workers int, pipe PipeFunc) {
 	pl.Append(workers, pipe)
 }
 
-func (pl Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
+func (pl *Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	for _, info := range pl.pipes {
 		outs := make([]<-chan any, info.workers)
 		for i := 0; i < info.workers; i++ {
 			outs[i] = info.pipe.Pipe(ctx, in)
 		}
 
-		in = aggregateChans(outs)
+		in = aggregateChans(pl.AggregBufCap, outs)
 	}
 
 	return in
 }
 
-func aggregateChans(cs []<-chan any) <-chan any {
-	out := make(chan any)
+func aggregateChans(cap int, cs []<-chan any) <-chan any {
+	out := make(chan any, cap)
 
 	go func() {
 		defer close(out)
