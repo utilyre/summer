@@ -1,10 +1,11 @@
 package command
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
-	"gihtub.com/utilyre/summer/sum"
+	"gihtub.com/utilyre/summer/pkg/summer"
 )
 
 func Execute(args []string) error {
@@ -17,13 +18,13 @@ func Execute(args []string) error {
 		root = args[0]
 	}
 
-	sums, err := sum.MD5All(root)
+	sums, err := summer.SumTree(context.Background(), root, summer.AlgorithmMD5)
 	if err != nil {
 		return err
 	}
 
-	for path, sum := range sums {
-		fmt.Printf("%x  %s\n", sum, path)
+	for _, info := range sums {
+		fmt.Printf("%x  %s\n", info.Checksum, info.Name)
 	}
 
 	return nil
