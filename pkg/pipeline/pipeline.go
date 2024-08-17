@@ -26,7 +26,6 @@ type pipeInfo struct {
 
 func (pl *Pipeline) Append(workers int, pipe Pipe) {
 	if workers <= 0 {
-		// TODO: write test for this
 		panic("pipeline error: non-positive pipe workers")
 	}
 
