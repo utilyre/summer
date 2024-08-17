@@ -3,6 +3,7 @@ package summer
 import (
 	"context"
 	"crypto/md5"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -51,7 +52,7 @@ type readerPipe struct {
 
 type fileInfo struct {
 	name string
-	data []byte
+	r    io.ReadCloser
 }
 
 func (rp readerPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
@@ -62,13 +63,13 @@ func (rp readerPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 
 		for v := range in {
 			name := v.(string)
-			data, err := os.ReadFile(name)
+			f, err := os.Open(name)
 			if err != nil {
 				return err
 			}
 
 			select {
-			case out <- fileInfo{name, data}:
+			case out <- fileInfo{name, f}:
 			case <-ctx.Done():
 				return ctx.Err()
 			}
@@ -97,10 +98,14 @@ func (dp digesterPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 
 		for v := range in {
 			file := v.(fileInfo)
-			sum := md5.Sum(file.data)
+
+			hash := md5.New()
+			if _, err := io.Copy(hash, file.r); err != nil {
+				return err
+			}
 
 			select {
-			case out <- Checksum{Name: file.name, Hash: sum[:]}:
+			case out <- Checksum{Name: file.name, Hash: hash.Sum(nil)}:
 			case <-ctx.Done():
 				return ctx.Err()
 			}
