@@ -38,6 +38,10 @@ func (pl *Pipeline) AppendFunc(workers int, pipe PipeFunc) {
 	pl.Append(workers, pipe)
 }
 
+func (pl *Pipeline) Clear() {
+	pl.pipes = nil
+}
+
 func (pl *Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	for _, info := range pl.pipes {
 		outs := make([]<-chan any, info.workers)
