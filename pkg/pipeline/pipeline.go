@@ -2,7 +2,7 @@ package pipeline
 
 import (
 	"context"
-	"sync"
+	"reflect"
 )
 
 type Pipe interface {
@@ -52,22 +52,28 @@ func (pl Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
 func aggregateChans(cs []<-chan any) <-chan any {
 	out := make(chan any)
 
-	var wg sync.WaitGroup
-	wg.Add(len(cs))
+	go func() {
+		defer close(out)
 
-	for _, c := range cs {
-		go func(c <-chan any) {
-			for n := range c {
-				out <- n
+		cases := make([]reflect.SelectCase, len(cs))
+		for i, c := range cs {
+			cases[i] = reflect.SelectCase{
+				Dir:  reflect.SelectRecv,
+				Chan: reflect.ValueOf(c),
+			}
+		}
+
+		numClosed := 0
+		for numClosed < len(cases) {
+			idx, v, open := reflect.Select(cases)
+			if !open {
+				cs[idx] = nil
+				numClosed++
+				continue
 			}
 
-			wg.Done()
-		}(c)
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
+			out <- v.Interface()
+		}
 	}()
 
 	return out
