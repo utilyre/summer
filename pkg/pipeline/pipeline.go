@@ -41,7 +41,7 @@ func (pl *Pipeline) AppendFunc(workers int, pipe PipeFunc) {
 func (pl *Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	for _, info := range pl.pipes {
 		outs := make([]<-chan any, info.workers)
-		for i := 0; i < info.workers; i++ {
+		for i := range info.workers {
 			outs[i] = info.pipe.Pipe(ctx, in)
 		}
 
