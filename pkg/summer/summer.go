@@ -27,8 +27,8 @@ func SumTree(
 
 	var checksums []Checksum
 	for v := range out {
-		info := v.(Checksum)
-		checksums = append(checksums, info)
+		cs := v.(Checksum)
+		checksums = append(checksums, cs)
 	}
 
 	if err := g.Wait(); err != nil {
