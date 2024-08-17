@@ -69,7 +69,7 @@ func aggregateChans(cap int, cs []<-chan any) <-chan any {
 		for numClosed < len(cases) {
 			idx, v, open := reflect.Select(cases)
 			if !open {
-				cs[idx] = nil
+				cases[idx].Chan = reflect.Value{}
 				numClosed++
 				continue
 			}
