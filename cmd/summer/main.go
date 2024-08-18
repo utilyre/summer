@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gihtub.com/utilyre/summer/pkg/summer"
+	"github.com/utilyre/summer/pkg/summer"
 )
 
 var (

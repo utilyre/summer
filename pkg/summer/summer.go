@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"gihtub.com/utilyre/summer/pkg/pipeline"
+	"github.com/utilyre/summer/pkg/pipeline"
 	"golang.org/x/sync/errgroup"
 )
 

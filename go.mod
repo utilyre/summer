@@ -1,4 +1,4 @@
-module gihtub.com/utilyre/summer
+module github.com/utilyre/summer
 
 go 1.23.0
 
