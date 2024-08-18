@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/dolmen-go/contextio"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -121,7 +122,8 @@ func (dp digestPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 				hash = sha512.New()
 			}
 
-			if _, err := io.Copy(hash, file.r); err != nil {
+			r := contextio.NewReader(ctx, file.r)
+			if _, err := io.Copy(hash, r); err != nil {
 				return fmt.Errorf("digester: %w", err)
 			}
 

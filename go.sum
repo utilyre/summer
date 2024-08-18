@@ -1,2 +1,4 @@
+github.com/dolmen-go/contextio v1.0.0 h1:bNfCo4gsRIhMeo6Z1ImXzkxZG81B6I5t2fUFJjphdAU=
+github.com/dolmen-go/contextio v1.0.0/go.mod h1:cxc20xI7fOgsFHWgt+PenlDDnMcrvh7Ocuj5hEFIdEk=
 golang.org/x/sync v0.8.0 h1:3NFvSEYkUoMifnESzZl15y791HH1qU2xm6eCJU5ZPXQ=
 golang.org/x/sync v0.8.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
