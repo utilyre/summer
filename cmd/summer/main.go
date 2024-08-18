@@ -3,11 +3,26 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 
 	"gihtub.com/utilyre/summer/pkg/summer"
 )
+
+var (
+	algo          = summer.AlgorithmMD5
+	readWorkers   int
+	digestWorkers int
+)
+
+func init() {
+	flag.Var(&algo, "algo", "sum using cryptographic hash function VALUE")
+	flag.IntVar(&readWorkers, "read-workers", 1, "run N read workers in parallel")
+	flag.IntVar(&digestWorkers, "digest-workers", 1, "run N digest workers in parallel")
+
+	flag.Parse()
+}
 
 func main() {
 	if err := run(); err != nil {
@@ -16,14 +31,17 @@ func main() {
 }
 
 func run() error {
-	if len(os.Args) < 2 {
-		return errors.New("too few arguments")
-	}
-	if len(os.Args) > 2 {
-		return errors.New("too many arguments")
+	if flag.NArg() != 1 {
+		return errors.New("too many or too few arguments")
 	}
 
-	checksums, err := summer.SumTree(context.Background(), os.Args[1])
+	checksums, err := summer.SumTree(
+		context.Background(),
+		flag.Arg(0),
+		summer.WithAlgorithm(algo),
+		summer.WithReadWorkers(readWorkers),
+		summer.WithDigestWorkers(digestWorkers),
+	)
 	if err != nil {
 		return err
 	}
