@@ -47,12 +47,7 @@ func main() {
 func run(ctx context.Context) error {
 	roots := flag.Args()
 	if len(roots) == 0 {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-
-		roots = append(roots, cwd)
+		roots = append(roots, ".")
 	}
 
 	checksums, err := summer.SumTree(
