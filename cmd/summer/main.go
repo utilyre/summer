@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"gihtub.com/utilyre/summer/pkg/summer"
 )
@@ -25,18 +27,28 @@ func init() {
 }
 
 func main() {
-	if err := run(); err != nil {
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGHUP,
+		syscall.SIGQUIT,
+		syscall.SIGPIPE,
+	)
+	defer cancel()
+
+	if err := run(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "summer: %v\n", err)
 	}
 }
 
-func run() error {
+func run(ctx context.Context) error {
 	if flag.NArg() != 1 {
 		return errors.New("too many or too few arguments")
 	}
 
 	checksums, err := summer.SumTree(
-		context.Background(),
+		ctx,
 		flag.Arg(0),
 		summer.WithAlgorithm(algo),
 		summer.WithReadWorkers(readWorkers),
