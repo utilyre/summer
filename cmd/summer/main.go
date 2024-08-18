@@ -7,18 +7,21 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/utilyre/summer/pkg/summer"
 )
 
 var (
 	algo          = summer.AlgorithmMD5
+	timeout       int64
 	readWorkers   int
 	digestWorkers int
 )
 
 func init() {
 	flag.Var(&algo, "algo", "sum using cryptographic hash function VALUE")
+	flag.Int64Var(&timeout, "timeout", 0, "cancel operation after N milliseconds")
 	flag.IntVar(&readWorkers, "read-workers", 1, "run N read workers in parallel")
 	flag.IntVar(&digestWorkers, "digest-workers", 1, "run N digest workers in parallel")
 
@@ -35,6 +38,11 @@ func main() {
 		syscall.SIGPIPE,
 	)
 	defer cancel()
+
+	if timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Millisecond)
+		defer cancel()
+	}
 
 	if err := run(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "summer: %v\n", err)
