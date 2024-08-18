@@ -16,13 +16,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// TODO: rename to walkPipe
-type walkerPipe struct {
+type walkPipe struct {
 	g     *errgroup.Group
 	roots []string
 }
 
-func (wp walkerPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
+func (wp walkPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 	out := make(chan any)
 
 	wp.g.Go(func() error {

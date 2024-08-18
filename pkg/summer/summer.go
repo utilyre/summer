@@ -146,7 +146,7 @@ func SumTree(
 	var pl pipeline.Pipeline
 	pl.Append(o.readWorkers, readPipe{g})
 	pl.Append(o.digestWorkers, digestPipe{g, o.algo})
-	out := pl.Pipe(ctx, walkerPipe{g, roots}.Pipe(ctx, nil))
+	out := pl.Pipe(ctx, walkPipe{g, roots}.Pipe(ctx, nil))
 
 	var checksums []Checksum
 	for v := range out {
