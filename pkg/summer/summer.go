@@ -3,10 +3,13 @@ package summer
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"gihtub.com/utilyre/summer/pkg/pipeline"
 	"golang.org/x/sync/errgroup"
 )
+
+var ErrInvalidText = errors.New("invalid text")
 
 type Algorithm int
 
@@ -16,6 +19,45 @@ const (
 	AlgorithmSha256
 	AlgorithmSha512
 )
+
+func (algo Algorithm) String() string {
+	switch algo {
+	case AlgorithmMD5:
+		return "md5"
+	case AlgorithmSha1:
+		return "sha1"
+	case AlgorithmSha256:
+		return "sha256"
+	case AlgorithmSha512:
+		return "sha512"
+	default:
+		panic("summer error: invalid enum state")
+	}
+}
+
+func (algo Algorithm) MarshalText() ([]byte, error) {
+	return []byte(algo.String()), nil
+}
+
+func (algo *Algorithm) UnmarshalText(text []byte) error {
+	s := string(text)
+	switch s {
+	case "md5":
+		*algo = AlgorithmMD5
+		return nil
+	case "sha1":
+		*algo = AlgorithmSha1
+		return nil
+	case "sha256":
+		*algo = AlgorithmSha256
+		return nil
+	case "sha512":
+		*algo = AlgorithmSha512
+		return nil
+	default:
+		return fmt.Errorf("algorithm: %w", ErrInvalidText)
+	}
+}
 
 type Option func(o *options) error
 
