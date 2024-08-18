@@ -31,8 +31,12 @@ func (algo Algorithm) String() string {
 	case AlgorithmSha512:
 		return "sha512"
 	default:
-		panic("summer error: invalid enum state")
+		return ""
 	}
+}
+
+func (algo *Algorithm) Set(value string) error {
+	return algo.UnmarshalText([]byte(value))
 }
 
 func (algo Algorithm) MarshalText() ([]byte, error) {
