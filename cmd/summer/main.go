@@ -29,20 +29,15 @@ func init() {
 }
 
 func main() {
-	ctx, cancel := signal.NotifyContext(
-		context.Background(),
-		syscall.SIGINT,
-		syscall.SIGTERM,
-		syscall.SIGHUP,
-		syscall.SIGQUIT,
-		syscall.SIGPIPE,
-	)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	if timeout > 0 {
 		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Millisecond)
 		defer cancel()
 	}
+
+	handleCancelSignals(cancel)
 
 	if err := run(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "summer: %v\n", err)
@@ -76,4 +71,29 @@ func run(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func handleCancelSignals(cancel context.CancelFunc) {
+	quitCh := make(chan os.Signal, 1)
+	signal.Notify(
+		quitCh,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGHUP,
+		syscall.SIGQUIT,
+		syscall.SIGPIPE,
+	)
+
+	go func() {
+		var lastSig os.Signal
+
+		for sig := range quitCh {
+			if lastSig != nil && lastSig.String() == sig.String() {
+				os.Exit(1)
+			}
+
+			lastSig = sig
+			cancel()
+		}
+	}()
 }
