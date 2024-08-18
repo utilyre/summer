@@ -6,6 +6,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
+	"fmt"
 	"hash"
 	"io"
 	"io/fs"
@@ -15,6 +16,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// TODO: rename to walkPipe
 type walkerPipe struct {
 	g    *errgroup.Group
 	root string
@@ -32,7 +34,7 @@ func (wp walkerPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 			err error,
 		) error {
 			if err != nil {
-				return err
+				return fmt.Errorf("walker: %w", err)
 			}
 			if !dirEntry.Type().IsRegular() {
 				return nil
@@ -41,7 +43,7 @@ func (wp walkerPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 			select {
 			case out <- name:
 			case <-ctx.Done():
-				return ctx.Err()
+				return fmt.Errorf("walker: %w", ctx.Err())
 			}
 			return nil
 		})
@@ -69,13 +71,13 @@ func (rp readPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 			name := v.(string)
 			f, err := os.Open(name)
 			if err != nil {
-				return err
+				return fmt.Errorf("reader: %w", err)
 			}
 
 			select {
 			case out <- fileInfo{name, f}:
 			case <-ctx.Done():
-				return ctx.Err()
+				return fmt.Errorf("reader: %w", ctx.Err())
 			}
 		}
 
@@ -117,13 +119,13 @@ func (dp digestPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 			}
 
 			if _, err := io.Copy(hash, file.r); err != nil {
-				return err
+				return fmt.Errorf("digester: %w", err)
 			}
 
 			select {
 			case out <- Checksum{Name: file.name, Hash: hash.Sum(nil)}:
 			case <-ctx.Done():
-				return ctx.Err()
+				return fmt.Errorf("digester: %w", ctx.Err())
 			}
 		}
 

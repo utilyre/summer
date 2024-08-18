@@ -9,7 +9,10 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var ErrInvalidText = errors.New("invalid text")
+var (
+	ErrInvalidText        = errors.New("invalid text")
+	ErrNonPositiveInteger = errors.New("non-positive integer")
+)
 
 type Algorithm int
 
@@ -59,11 +62,25 @@ func (algo *Algorithm) UnmarshalText(text []byte) error {
 		*algo = AlgorithmSha512
 		return nil
 	default:
-		return fmt.Errorf("algorithm: %w", ErrInvalidText)
+		return fmt.Errorf("algorithm: string '%s': %w", s, ErrInvalidText)
 	}
 }
 
 type Option func(o *options) error
+
+type OptionError struct {
+	Which string
+	Value any
+	Err   error
+}
+
+func (e OptionError) Error() string {
+	return fmt.Sprintf("option '%s': value %v: %v", e.Which, e.Value, e.Err)
+}
+
+func (e OptionError) Unwrap() error {
+	return e.Err
+}
 
 type options struct {
 	algo          Algorithm
@@ -81,7 +98,11 @@ func WithAlgorithm(algo Algorithm) Option {
 func WithReadWorkers(workers int) Option {
 	return func(o *options) error {
 		if workers <= 0 {
-			return errors.New("number of read workers must be positive")
+			return OptionError{
+				Which: "read workers",
+				Value: workers,
+				Err:   ErrNonPositiveInteger,
+			}
 		}
 
 		o.readWorkers = workers
@@ -92,7 +113,11 @@ func WithReadWorkers(workers int) Option {
 func WithDigestWorkers(workers int) Option {
 	return func(o *options) error {
 		if workers <= 0 {
-			return errors.New("number of digest workers must be positive")
+			return OptionError{
+				Which: "digest workers",
+				Value: workers,
+				Err:   ErrNonPositiveInteger,
+			}
 		}
 
 		o.digestWorkers = workers
