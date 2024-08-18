@@ -16,7 +16,10 @@
     </a>
   </h1>
   <p>
-     🔥 Performant utility for generating checksums.
+    A high-performance utility for recursively generating checksums, designed
+    to efficiently process large directories and files, offers a comprehensive
+    API for seamless integration into other applications, ensuring reliable
+    data integrity across various platforms.
   </p>
 </div>
 
