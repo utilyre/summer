@@ -18,8 +18,8 @@ import (
 
 // TODO: rename to walkPipe
 type walkerPipe struct {
-	g    *errgroup.Group
-	root string
+	g     *errgroup.Group
+	roots []string
 }
 
 func (wp walkerPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
@@ -28,11 +28,7 @@ func (wp walkerPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 	wp.g.Go(func() error {
 		defer close(out)
 
-		return filepath.WalkDir(wp.root, func(
-			name string,
-			dirEntry fs.DirEntry,
-			err error,
-		) error {
+		walk := func(name string, dirEntry fs.DirEntry, err error) error {
 			if err != nil {
 				return fmt.Errorf("walker: %w", err)
 			}
@@ -46,7 +42,15 @@ func (wp walkerPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 				return fmt.Errorf("walker: %w", ctx.Err())
 			}
 			return nil
-		})
+		}
+
+		for _, root := range wp.roots {
+			if err := filepath.WalkDir(root, walk); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 
 	return out

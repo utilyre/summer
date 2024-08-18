@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -43,13 +42,19 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	if flag.NArg() != 1 {
-		return errors.New("too many or too few arguments")
+	roots := flag.Args()
+	if len(roots) == 0 {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		roots = append(roots, cwd)
 	}
 
 	checksums, err := summer.SumTree(
 		ctx,
-		flag.Arg(0),
+		roots,
 		summer.WithAlgorithm(algo),
 		summer.WithReadWorkers(readWorkers),
 		summer.WithDigestWorkers(digestWorkers),
