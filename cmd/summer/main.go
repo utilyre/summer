@@ -85,14 +85,14 @@ func handleCancelSignals(cancel context.CancelFunc) {
 	)
 
 	go func() {
-		var lastSig os.Signal
+		wasSIGINT := false
 
 		for sig := range quitCh {
-			if lastSig != nil && lastSig.String() == sig.String() {
+			if wasSIGINT && sig == syscall.SIGINT {
 				os.Exit(1)
 			}
 
-			lastSig = sig
+			wasSIGINT = sig == syscall.SIGINT
 			cancel()
 		}
 	}()
