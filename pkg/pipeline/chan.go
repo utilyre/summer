@@ -2,6 +2,8 @@ package pipeline
 
 import "reflect"
 
+// Aggregate aggregates incoming values from cs and forwards them to returned
+// channel. It can queue up to cap values.
 func Aggregate[T any](cap int, cs []<-chan T) <-chan T {
 	out := make(chan T, cap)
 
