@@ -14,6 +14,7 @@ var (
 	ErrNonPositiveInteger = errors.New("non-positive integer")
 )
 
+// Algorithm represents a supported hash function.
 type Algorithm int
 
 const (
@@ -66,8 +67,10 @@ func (algo *Algorithm) UnmarshalText(text []byte) error {
 	}
 }
 
+// Option represents an optional parameter given to SumTree.
 type Option func(o *options) error
 
+// OptionError represents a validation error of Option.
 type OptionError struct {
 	Which string
 	Value any
@@ -88,6 +91,7 @@ type options struct {
 	digestWorkers int
 }
 
+// WithAlgorithm sets the used hash function for SumTree.
 func WithAlgorithm(algo Algorithm) Option {
 	return func(o *options) error {
 		o.algo = algo
@@ -95,6 +99,7 @@ func WithAlgorithm(algo Algorithm) Option {
 	}
 }
 
+// WithReadWorkers sets number of read workers for SumTree.
 func WithReadWorkers(workers int) Option {
 	return func(o *options) error {
 		if workers <= 0 {
@@ -110,6 +115,7 @@ func WithReadWorkers(workers int) Option {
 	}
 }
 
+// WithDigestWorkers sets number of digest workers for SumTree.
 func WithDigestWorkers(workers int) Option {
 	return func(o *options) error {
 		if workers <= 0 {
@@ -125,6 +131,8 @@ func WithDigestWorkers(workers int) Option {
 	}
 }
 
+// SumTree recursively generates checksums for each file under all roots in
+// parallel.
 func SumTree(
 	ctx context.Context,
 	roots []string,
