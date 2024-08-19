@@ -49,13 +49,13 @@ func (pl *Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
 			outs[i] = info.pipe.Pipe(ctx, in)
 		}
 
-		in = aggregateChans(pl.AggregBufCap, outs)
+		in = Aggregate(pl.AggregBufCap, outs)
 	}
 
 	return in
 }
 
-func aggregateChans(cap int, cs []<-chan any) <-chan any {
+func Aggregate(cap int, cs []<-chan any) <-chan any {
 	out := make(chan any, cap)
 
 	go func() {
