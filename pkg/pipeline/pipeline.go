@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"context"
-	"reflect"
 )
 
 type Pipe interface {
@@ -53,34 +52,4 @@ func (pl *Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	}
 
 	return in
-}
-
-func Aggregate(cap int, cs []<-chan any) <-chan any {
-	out := make(chan any, cap)
-
-	go func() {
-		defer close(out)
-
-		cases := make([]reflect.SelectCase, len(cs))
-		for i, c := range cs {
-			cases[i] = reflect.SelectCase{
-				Dir:  reflect.SelectRecv,
-				Chan: reflect.ValueOf(c),
-			}
-		}
-
-		numClosed := 0
-		for numClosed < len(cases) {
-			idx, v, open := reflect.Select(cases)
-			if !open {
-				cases[idx].Chan = reflect.Value{}
-				numClosed++
-				continue
-			}
-
-			out <- v.Interface()
-		}
-	}()
-
-	return out
 }
