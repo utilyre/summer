@@ -14,7 +14,7 @@ var (
 	ErrNonPositiveInteger = errors.New("non-positive integer")
 )
 
-// Algorithm represents a supported hash function.
+// An Algorithm represents a supported hash function.
 type Algorithm int
 
 const (
@@ -67,10 +67,10 @@ func (algo *Algorithm) UnmarshalText(text []byte) error {
 	}
 }
 
-// Option represents an optional parameter given to SumTree.
+// An Option represents an optional parameter given to SumTree.
 type Option func(o *options) error
 
-// OptionError represents a validation error of Option.
+// An OptionError represents a validation error of Option.
 type OptionError struct {
 	Which string
 	Value any

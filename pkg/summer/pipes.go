@@ -96,7 +96,7 @@ type digestPipe struct {
 	algo Algorithm
 }
 
-// Checksum represents name and hash of a particular file.
+// A Checksum represents name and hash of a particular file.
 type Checksum struct {
 	Name string
 	Hash []byte

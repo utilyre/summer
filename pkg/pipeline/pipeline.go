@@ -4,19 +4,19 @@ import (
 	"context"
 )
 
-// Pipe receives inputs from in, processes them, and sends output to out.
+// A Pipe is the smallest unit capable of processing data concurrently.
 type Pipe interface {
 	Pipe(ctx context.Context, in <-chan any) (out <-chan any)
 }
 
-// PipeFunc is an adapter to allow the use of ordinary functions as Pipe.
+// A PipeFunc is an adapter to allow the use of ordinary functions as Pipe.
 type PipeFunc func(ctx context.Context, in <-chan any) <-chan any
 
 func (f PipeFunc) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	return f(ctx, in)
 }
 
-// Pipeline stores a sequence of pipes to be ran concurrently and in parallel.
+// A Pipeline allows the output of one Pipe to be used as the input of another.
 type Pipeline struct {
 	AggregBufCap int
 
@@ -28,7 +28,7 @@ type pipeInfo struct {
 	pipe    Pipe
 }
 
-// Append appends workers instances of pipe to pl in parallel.
+// Append appends workers number of instances of pipe to pl in parallel.
 func (pl *Pipeline) Append(workers int, pipe Pipe) {
 	if workers <= 0 {
 		panic("pipeline error: non-positive pipe workers")
@@ -37,7 +37,7 @@ func (pl *Pipeline) Append(workers int, pipe Pipe) {
 	pl.pipes = append(pl.pipes, pipeInfo{workers, pipe})
 }
 
-// AppendFunc appends workers instances of pipe to pl in parallel.
+// AppendFunc appends workers number of instances of pipe to pl in parallel.
 func (pl *Pipeline) AppendFunc(workers int, pipe PipeFunc) {
 	pl.Append(workers, pipe)
 }
