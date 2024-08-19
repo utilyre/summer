@@ -1,0 +1,51 @@
+name: CD
+
+on:
+  push:
+    tags: [v*.*.*]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [linux, darwin]
+        arch: ["386", amd64, arm, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.0"
+
+      - run: go mod download -x
+      - run: >
+          env GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }}
+          go build -v ./cmd/summer
+      - run: >
+          tar -vczf summer-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+          summer README.md LICENSE
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}
+          path: summer-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: .
+
+      - run: mv */*.tar.gz .
+      - run: sha256sum *.tar.gz > sha256sums.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: summer ${{ github.ref_name }}
+          files: |
+            *.tar.gz
+            sha256sums.txt
