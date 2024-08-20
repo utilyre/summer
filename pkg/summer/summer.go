@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 
 	"github.com/utilyre/summer/pkg/pipeline"
 )
@@ -140,7 +141,7 @@ func SumTree(
 	ctx context.Context,
 	roots []string,
 	opts ...Option,
-) ([]Result[Checksum], error) {
+) (iter.Seq[Result[Checksum]], error) {
 	o := &options{
 		algo:       AlgorithmMD5,
 		readJobs:   1,
@@ -157,11 +158,12 @@ func SumTree(
 	pl.Append(o.digestJobs, digestPipe{o.algo})
 	out := pl.Pipe(ctx, walkPipe{roots}.Pipe(ctx, nil))
 
-	var checksums []Result[Checksum]
-	for v := range out {
-		cs := v.(Result[Checksum])
-		checksums = append(checksums, cs)
-	}
-
-	return checksums, nil
+	return func(yield func(Result[Checksum]) bool) {
+		for v := range out {
+			sum := v.(Result[Checksum])
+			if !yield(sum) {
+				return
+			}
+		}
+	}, nil
 }

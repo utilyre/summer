@@ -39,7 +39,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	for _, res := range results {
+	for res := range results {
 		if res.Err != nil {
 			fmt.Fprintln(os.Stderr, "summer:", res.Err)
 			continue
