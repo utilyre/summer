@@ -33,7 +33,7 @@ func (wp walkPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 
 		walk := func(name string, dirEntry fs.DirEntry, err error) error {
 			if err != nil {
-				return fmt.Errorf("walker: %w", err)
+				return fmt.Errorf("walker: file %s: %w", name, err)
 			}
 			if !dirEntry.Type().IsRegular() {
 				return nil
@@ -42,7 +42,7 @@ func (wp walkPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 			select {
 			case out <- Result[string]{Val: name}:
 			case <-ctx.Done():
-				return fmt.Errorf("walker: %w", ctx.Err())
+				return fmt.Errorf("walker: file %s: %w", name, ctx.Err())
 			}
 			return nil
 		}
@@ -79,14 +79,14 @@ func (rp readPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 
 			f, err := os.Open(res.Val)
 			if err != nil {
-				out <- Result[fileInfo]{Err: fmt.Errorf("reader: %w", err)}
+				out <- Result[fileInfo]{Err: fmt.Errorf("reader: file %s: %w", res.Val, err)}
 				continue
 			}
 
 			select {
 			case out <- Result[fileInfo]{Val: fileInfo{res.Val, f}}:
 			case <-ctx.Done():
-				out <- Result[fileInfo]{Err: fmt.Errorf("reader: %w", ctx.Err())}
+				out <- Result[fileInfo]{Err: fmt.Errorf("reader: file %s: %w", res.Val, ctx.Err())}
 			}
 		}
 	}()
@@ -131,14 +131,14 @@ func (dp digestPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 
 			r := contextio.NewReader(ctx, res.Val.r)
 			if _, err := io.Copy(hash, r); err != nil {
-				out <- Result[Checksum]{Err: fmt.Errorf("digester: %w", err)}
+				out <- Result[Checksum]{Err: fmt.Errorf("digester: file %s: %w", res.Val.name, err)}
 				continue
 			}
 
 			select {
 			case out <- Result[Checksum]{Val: Checksum{res.Val.name, hash.Sum(nil)}}:
 			case <-ctx.Done():
-				out <- Result[Checksum]{Err: fmt.Errorf("digester: %w", ctx.Err())}
+				out <- Result[Checksum]{Err: fmt.Errorf("digester: file %s: %w", res.Val.name, ctx.Err())}
 			}
 		}
 	}()
