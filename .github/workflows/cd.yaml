@@ -27,7 +27,7 @@ jobs:
           go build -v ./cmd/summer
       - run: >
           tar -vczf summer-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
-          summer README.md LICENSE
+          summer README.md NOTICE LICENSE
 
       - uses: actions/upload-artifact@v4
         with:
