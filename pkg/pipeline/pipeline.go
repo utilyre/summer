@@ -18,7 +18,8 @@ func (f PipeFunc) Pipe(ctx context.Context, in <-chan any) <-chan any {
 
 // A Pipeline allows the output of one Pipe to be used as the input of another.
 type Pipeline struct {
-	AggregBufCap int
+	// Cap determines maximum queue size for each pipe.
+	Cap int
 
 	pipes []pipeInfo
 }
@@ -54,7 +55,7 @@ func (pl *Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
 			outs[i] = info.pipe.Pipe(ctx, in)
 		}
 
-		in = Aggregate(pl.AggregBufCap, outs)
+		in = Aggregate(pl.Cap, outs)
 	}
 
 	return in
