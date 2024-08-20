@@ -24,22 +24,22 @@ type Pipeline struct {
 }
 
 type pipeInfo struct {
-	workers int
-	pipe    Pipe
+	n    int
+	pipe Pipe
 }
 
-// Append appends workers number of instances of pipe to pl in parallel.
-func (pl *Pipeline) Append(workers int, pipe Pipe) {
-	if workers <= 0 {
-		panic("pipeline error: non-positive pipe workers")
+// Append appends n parallel jobs of pipe to pl.
+func (pl *Pipeline) Append(n int, pipe Pipe) {
+	if n <= 0 {
+		panic("pipeline error: non-positive pipe jobs")
 	}
 
-	pl.pipes = append(pl.pipes, pipeInfo{workers, pipe})
+	pl.pipes = append(pl.pipes, pipeInfo{n, pipe})
 }
 
-// AppendFunc appends workers number of instances of pipe to pl in parallel.
-func (pl *Pipeline) AppendFunc(workers int, pipe PipeFunc) {
-	pl.Append(workers, pipe)
+// AppendFunc appends n parallel jobs of pipe to pl.
+func (pl *Pipeline) AppendFunc(n int, pipe PipeFunc) {
+	pl.Append(n, pipe)
 }
 
 // Clear removes all pipes from pl.
@@ -49,8 +49,8 @@ func (pl *Pipeline) Clear() {
 
 func (pl *Pipeline) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	for _, info := range pl.pipes {
-		outs := make([]<-chan any, info.workers)
-		for i := range info.workers {
+		outs := make([]<-chan any, info.n)
+		for i := range info.n {
 			outs[i] = info.pipe.Pipe(ctx, in)
 		}
 
