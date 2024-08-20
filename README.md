@@ -16,7 +16,7 @@
     </a>
   </h1>
   <p>
-    Performant utility for generating checksums in parallel.
+    High-performance utility for generating checksums in parallel.
   </p>
 </div>
 
