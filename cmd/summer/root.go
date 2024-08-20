@@ -21,15 +21,22 @@ func newCommand() *cobra.Command {
 	fset.Int64Var(&timeout, "timeout", 0, "cancel operation after given milliseconds")
 	fset.Var(&algo, "algo", "sum using given cryptographic hash function")
 
+	cmdVersion := &cobra.Command{
+		Use:   "version",
+		Short: "TODO",
+		Args:  cobra.NoArgs,
+		RunE:  runVersion,
+	}
+
 	cmdGenerate := &cobra.Command{
 		Use:   "generate [files]",
 		Short: "Generate checksums for given files",
-		RunE:  generate,
+		RunE:  runGenerate,
 	}
 	fset = cmdGenerate.Flags()
 	fset.Int("read-jobs", 1, "run given number of read jobs in parallel")
 	fset.Int("digest-jobs", 1, "run given number of digest jobs in parallel")
 
-	cmd.AddCommand(cmdGenerate)
+	cmd.AddCommand(cmdVersion, cmdGenerate)
 	return cmd
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/utilyre/summer/pkg/summer"
 )
 
-func generate(cmd *cobra.Command, args []string) error {
+func runGenerate(cmd *cobra.Command, args []string) error {
 	ctx, cancel := cli.NewContext(time.Duration(timeout) * time.Millisecond)
 	defer cancel()
 
