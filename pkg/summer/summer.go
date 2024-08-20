@@ -90,12 +90,12 @@ func (e OptionError) Unwrap() error {
 }
 
 type options struct {
-	algo          Algorithm
-	readWorkers   int
-	digestWorkers int
+	algo       Algorithm
+	readJobs   int
+	digestJobs int
 }
 
-// WithAlgorithm sets the used hash function for SumTree.
+// WithAlgorithm sets the used hash function.
 func WithAlgorithm(algo Algorithm) Option {
 	return func(o *options) error {
 		o.algo = algo
@@ -103,34 +103,34 @@ func WithAlgorithm(algo Algorithm) Option {
 	}
 }
 
-// WithReadWorkers sets number of read workers for SumTree.
-func WithReadWorkers(workers int) Option {
+// WithReadJobs sets number of read jobs.
+func WithReadJobs(n int) Option {
 	return func(o *options) error {
-		if workers <= 0 {
+		if n <= 0 {
 			return OptionError{
-				Which: "read workers",
-				Value: workers,
+				Which: "read jobs",
+				Value: n,
 				Err:   ErrNonPositiveInteger,
 			}
 		}
 
-		o.readWorkers = workers
+		o.readJobs = n
 		return nil
 	}
 }
 
-// WithDigestWorkers sets number of digest workers for SumTree.
-func WithDigestWorkers(workers int) Option {
+// WithDigestJobs sets number of digest jobs.
+func WithDigestJobs(n int) Option {
 	return func(o *options) error {
-		if workers <= 0 {
+		if n <= 0 {
 			return OptionError{
-				Which: "digest workers",
-				Value: workers,
+				Which: "digest jobs",
+				Value: n,
 				Err:   ErrNonPositiveInteger,
 			}
 		}
 
-		o.digestWorkers = workers
+		o.digestJobs = n
 		return nil
 	}
 }
@@ -143,9 +143,9 @@ func SumTree(
 	opts ...Option,
 ) ([]Checksum, error) {
 	o := &options{
-		algo:          AlgorithmMD5,
-		readWorkers:   1,
-		digestWorkers: 1,
+		algo:       AlgorithmMD5,
+		readJobs:   1,
+		digestJobs: 1,
 	}
 	for _, opt := range opts {
 		if err := opt(o); err != nil {
@@ -156,8 +156,8 @@ func SumTree(
 	g, ctx := errgroup.WithContext(ctx)
 
 	var pl pipeline.Pipeline
-	pl.Append(o.readWorkers, readPipe{g})
-	pl.Append(o.digestWorkers, digestPipe{g, o.algo})
+	pl.Append(o.readJobs, readPipe{g})
+	pl.Append(o.digestJobs, digestPipe{g, o.algo})
 	out := pl.Pipe(ctx, walkPipe{g, roots}.Pipe(ctx, nil))
 
 	var checksums []Checksum

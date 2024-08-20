@@ -31,8 +31,8 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		ctx,
 		args,
 		summer.WithAlgorithm(algo),
-		summer.WithReadWorkers(readJobs),
-		summer.WithDigestWorkers(digestJobs),
+		summer.WithReadJobs(readJobs),
+		summer.WithDigestJobs(digestJobs),
 	)
 	if err != nil {
 		return err
