@@ -21,6 +21,7 @@ jobs:
         with:
           go-version: "1.23.0"
 
+      - run: printf %s ${{ github.ref_name }} > cmd/summer/version.txt
       - run: go mod download -x
       - run: >
           env GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }}
