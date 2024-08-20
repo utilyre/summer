@@ -39,6 +39,10 @@ func (algo Algorithm) String() string {
 	}
 }
 
+func (Algorithm) Type() string {
+	return "md5|sha1|sha256|sha512"
+}
+
 func (algo *Algorithm) Set(value string) error {
 	return algo.UnmarshalText([]byte(value))
 }
