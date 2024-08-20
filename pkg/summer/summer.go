@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/utilyre/summer/pkg/pipeline"
-	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -141,7 +140,7 @@ func SumTree(
 	ctx context.Context,
 	roots []string,
 	opts ...Option,
-) ([]Checksum, error) {
+) ([]Result[Checksum], error) {
 	o := &options{
 		algo:       AlgorithmMD5,
 		readJobs:   1,
@@ -153,21 +152,15 @@ func SumTree(
 		}
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
-
 	var pl pipeline.Pipeline
-	pl.Append(o.readJobs, readPipe{g})
-	pl.Append(o.digestJobs, digestPipe{g, o.algo})
-	out := pl.Pipe(ctx, walkPipe{g, roots}.Pipe(ctx, nil))
+	pl.Append(o.readJobs, readPipe{})
+	pl.Append(o.digestJobs, digestPipe{o.algo})
+	out := pl.Pipe(ctx, walkPipe{roots}.Pipe(ctx, nil))
 
-	var checksums []Checksum
+	var checksums []Result[Checksum]
 	for v := range out {
-		cs := v.(Checksum)
+		cs := v.(Result[Checksum])
 		checksums = append(checksums, cs)
-	}
-
-	if err := g.Wait(); err != nil {
-		return nil, err
 	}
 
 	return checksums, nil

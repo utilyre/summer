@@ -14,18 +14,21 @@ import (
 	"path/filepath"
 
 	"github.com/dolmen-go/contextio"
-	"golang.org/x/sync/errgroup"
 )
 
+type Result[T any] struct {
+	Val T
+	Err error
+}
+
 type walkPipe struct {
-	g     *errgroup.Group
 	roots []string
 }
 
 func (wp walkPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 	out := make(chan any)
 
-	wp.g.Go(func() error {
+	go func() {
 		defer close(out)
 
 		walk := func(name string, dirEntry fs.DirEntry, err error) error {
@@ -37,7 +40,7 @@ func (wp walkPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 			}
 
 			select {
-			case out <- name:
+			case out <- Result[string]{Val: name}:
 			case <-ctx.Done():
 				return fmt.Errorf("walker: %w", ctx.Err())
 			}
@@ -46,19 +49,15 @@ func (wp walkPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 
 		for _, root := range wp.roots {
 			if err := filepath.WalkDir(root, walk); err != nil {
-				return err
+				out <- Result[string]{Err: err}
 			}
 		}
-
-		return nil
-	})
+	}()
 
 	return out
 }
 
-type readPipe struct {
-	g *errgroup.Group
-}
+type readPipe struct{}
 
 type fileInfo struct {
 	name string
@@ -68,31 +67,34 @@ type fileInfo struct {
 func (rp readPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	out := make(chan any)
 
-	rp.g.Go(func() error {
+	go func() {
 		defer close(out)
 
 		for v := range in {
-			name := v.(string)
-			f, err := os.Open(name)
+			res := v.(Result[string])
+			if res.Err != nil {
+				out <- Result[fileInfo]{Err: res.Err}
+				continue
+			}
+
+			f, err := os.Open(res.Val)
 			if err != nil {
-				return fmt.Errorf("reader: %w", err)
+				out <- Result[fileInfo]{Err: fmt.Errorf("reader: %w", err)}
+				continue
 			}
 
 			select {
-			case out <- fileInfo{name, f}:
+			case out <- Result[fileInfo]{Val: fileInfo{res.Val, f}}:
 			case <-ctx.Done():
-				return fmt.Errorf("reader: %w", ctx.Err())
+				out <- Result[fileInfo]{Err: fmt.Errorf("reader: %w", ctx.Err())}
 			}
 		}
-
-		return nil
-	})
+	}()
 
 	return out
 }
 
 type digestPipe struct {
-	g    *errgroup.Group
 	algo Algorithm
 }
 
@@ -105,11 +107,15 @@ type Checksum struct {
 func (dp digestPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 	out := make(chan any)
 
-	dp.g.Go(func() error {
+	go func() {
 		defer close(out)
 
 		for v := range in {
-			file := v.(fileInfo)
+			res := v.(Result[fileInfo])
+			if res.Err != nil {
+				out <- Result[Checksum]{Err: res.Err}
+				continue
+			}
 
 			var hash hash.Hash
 			switch dp.algo {
@@ -123,20 +129,19 @@ func (dp digestPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 				hash = sha512.New()
 			}
 
-			r := contextio.NewReader(ctx, file.r)
+			r := contextio.NewReader(ctx, res.Val.r)
 			if _, err := io.Copy(hash, r); err != nil {
-				return fmt.Errorf("digester: %w", err)
+				out <- Result[Checksum]{Err: fmt.Errorf("digester: %w", err)}
+				continue
 			}
 
 			select {
-			case out <- Checksum{Name: file.name, Hash: hash.Sum(nil)}:
+			case out <- Result[Checksum]{Val: Checksum{res.Val.name, hash.Sum(nil)}}:
 			case <-ctx.Done():
-				return fmt.Errorf("digester: %w", ctx.Err())
+				out <- Result[Checksum]{Err: fmt.Errorf("digester: %w", ctx.Err())}
 			}
 		}
-
-		return nil
-	})
+	}()
 
 	return out
 }

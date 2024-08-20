@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -27,7 +28,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	checksums, err := summer.SumTree(
+	results, err := summer.SumTree(
 		ctx,
 		args,
 		summer.WithAlgorithm(algo),
@@ -38,8 +39,13 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	for _, cs := range checksums {
-		fmt.Printf("%x  %s\n", cs.Hash, cs.Name)
+	for _, res := range results {
+		if res.Err != nil {
+			fmt.Fprintln(os.Stderr, "summer:", res.Err)
+			continue
+		}
+
+		fmt.Printf("%x  %s\n", res.Val.Hash, res.Val.Name)
 	}
 
 	return nil
