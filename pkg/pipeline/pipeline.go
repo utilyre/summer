@@ -1,8 +1,6 @@
 package pipeline
 
-import (
-	"context"
-)
+import "context"
 
 // A Pipe is the smallest unit capable of processing data concurrently.
 type Pipe interface {
