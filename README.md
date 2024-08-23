@@ -77,13 +77,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-  for result := range results {
-    if result.Err != nil {
-      log.Println(result.Err)
-      continue
-    }
+	for result := range results {
+		if result.Err != nil {
+			log.Println(result.Err)
+			continue
+		}
 
-    // TODO
-  }
+		// TODO
+	}
 }
 ```
