@@ -22,37 +22,39 @@
 
 ## Installation
 
-Compile and install using go toolchain:
+- [Latest Release](https://github.com/utilyre/summer/releases/latest)
 
-```bash
-go install github.com/utilyre/summer/cmd/summer@latest
-```
+- Manual
+
+  ```bash
+  go install github.com/utilyre/summer/cmd/summer@latest
+  ```
 
 ## Usage
 
-For starters, if you just run the command (without any arguments), it should
-give you the checksum of every file in your current directory:
+For starters, if you just run the generate command (without any arguments), it
+should give you the checksum of every file in your current directory.
 
 ```
-$ summer
+$ summer generate
 081ecc5e6dd6ba0d150fc4bc0e62ec50  bar
 764efa883dda1e11db47671c4a3bbd9e  foo
 168065a0236e2e64c9c6cdd086c55f63  nested/baz
 ```
 
-In case you only care about certain files/directories, list those as arguments:
+In case you only care about certain files/directories, list those as arguments.
 
 ```
-$ summer bar nested
+$ summer generate bar nested
 081ecc5e6dd6ba0d150fc4bc0e62ec50  bar
 168065a0236e2e64c9c6cdd086c55f63  nested/baz
 ```
 
-To utilize more cores of your CPU, pass `-read-workers=n` and
-`-digest-workers=m` flags, where `n` and `m` are the number of workers (roughly
-CPU cores) used for each task respectively.
+To utilize more cores of your CPU, pass `--read-workers=n` and
+`--digest-workers=m` flags, where `n` and `m` are the number of workers used
+for each task respectively.
 
-Run `summer -h` to learn more about different flags.
+Run `summer help generate` to learn more about different flags.
 
 ## API
 
@@ -70,16 +72,18 @@ import (
 )
 
 func main() {
-	checksums, err := summer.SumTree(
-		context.TODO(),
-		[]string{"."},
-		summer.WithAlgorithm(summer.AlgorithmSha1),
-	)
+	results, err := summer.SumTree(context.TODO(), []string{"."})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// TODO: use checksums
-	_ = checksums
+  for result := range results {
+    if result.Err != nil {
+      log.Println(result.Err)
+      continue
+    }
+
+    // TODO
+  }
 }
 ```
