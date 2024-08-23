@@ -23,7 +23,7 @@ func newCommand() *cobra.Command {
 
 	cmdVersion := &cobra.Command{
 		Use:   "version",
-		Short: "TODO",
+		Short: "Get current version",
 		Args:  cobra.NoArgs,
 		RunE:  runVersion,
 	}
