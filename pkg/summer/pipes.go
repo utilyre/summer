@@ -16,41 +16,40 @@ import (
 	"github.com/dolmen-go/contextio"
 )
 
-type Result[T any] struct {
-	Val T
-	Err error
-}
-
-type walkPipe struct {
-	roots []string
-}
-
-func (wp walkPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
-	out := make(chan any)
+func walkDirs(ctx context.Context, roots []string) <-chan *Checksum {
+	out := make(chan *Checksum)
 
 	go func() {
 		defer close(out)
 
 		walk := func(name string, dirEntry fs.DirEntry, err error) error {
+			cs := &Checksum{Name: name}
+
 			if err != nil {
-				return fmt.Errorf("walker: file %s: %w", name, err)
+				cs.Err = fmt.Errorf("walk %s: %w", cs.Name, err)
+				out <- cs
+				return nil
 			}
 			if !dirEntry.Type().IsRegular() {
 				return nil
 			}
 
 			select {
-			case out <- Result[string]{Val: name}:
+			case out <- cs:
 			case <-ctx.Done():
-				return fmt.Errorf("walker: file %s: %w", name, ctx.Err())
+				cs.Err = fmt.Errorf("walk %s: %w", cs.Name, ctx.Err())
+				out <- cs
+
+				// return non-nil error to abort the walk
+				return cs.Err
 			}
+
 			return nil
 		}
 
-		for _, root := range wp.roots {
-			if err := filepath.WalkDir(root, walk); err != nil {
-				out <- Result[string]{Err: err}
-			}
+		for _, root := range roots {
+			// NOTE: errors are handled by walk
+			_ = filepath.WalkDir(root, walk)
 		}
 	}()
 
@@ -59,34 +58,32 @@ func (wp walkPipe) Pipe(ctx context.Context, _ <-chan any) <-chan any {
 
 type readPipe struct{}
 
-type fileInfo struct {
-	name string
-	r    io.ReadCloser
-}
-
-func (rp readPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
-	out := make(chan any)
+func (rp readPipe) Pipe(ctx context.Context, in <-chan *Checksum) <-chan *Checksum {
+	out := make(chan *Checksum)
 
 	go func() {
 		defer close(out)
 
-		for v := range in {
-			res := v.(Result[string])
-			if res.Err != nil {
-				out <- Result[fileInfo]{Err: res.Err}
+		for cs := range in {
+			if cs.Err != nil {
+				out <- cs
 				continue
 			}
 
-			f, err := os.Open(res.Val)
+			f, err := os.Open(cs.Name)
 			if err != nil {
-				out <- Result[fileInfo]{Err: fmt.Errorf("reader: file %s: %w", res.Val, err)}
+				cs.Err = fmt.Errorf("read %s: %w", cs.Name, err)
+				out <- cs
 				continue
 			}
+
+			cs.body = f
 
 			select {
-			case out <- Result[fileInfo]{Val: fileInfo{res.Val, f}}:
+			case out <- cs:
 			case <-ctx.Done():
-				out <- Result[fileInfo]{Err: fmt.Errorf("reader: file %s: %w", res.Val, ctx.Err())}
+				cs.Err = fmt.Errorf("read %s: %w", cs.Name, ctx.Err())
+				out <- cs
 			}
 		}
 	}()
@@ -98,22 +95,15 @@ type digestPipe struct {
 	algo Algorithm
 }
 
-// A Checksum represents name and hash of a particular file.
-type Checksum struct {
-	Name string
-	Hash []byte
-}
-
-func (dp digestPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
-	out := make(chan any)
+func (dp digestPipe) Pipe(ctx context.Context, in <-chan *Checksum) <-chan *Checksum {
+	out := make(chan *Checksum)
 
 	go func() {
 		defer close(out)
 
-		for v := range in {
-			res := v.(Result[fileInfo])
-			if res.Err != nil {
-				out <- Result[Checksum]{Err: res.Err}
+		for cs := range in {
+			if cs.Err != nil {
+				out <- cs
 				continue
 			}
 
@@ -129,16 +119,19 @@ func (dp digestPipe) Pipe(ctx context.Context, in <-chan any) <-chan any {
 				hash = sha512.New()
 			}
 
-			r := contextio.NewReader(ctx, res.Val.r)
+			r := contextio.NewReader(ctx, cs.body)
 			if _, err := io.Copy(hash, r); err != nil {
-				out <- Result[Checksum]{Err: fmt.Errorf("digester: file %s: %w", res.Val.name, err)}
+				cs.Err = fmt.Errorf("digest %s: %w", cs.Name, err)
 				continue
 			}
 
+			cs.Hash = hash.Sum(nil)
+
 			select {
-			case out <- Result[Checksum]{Val: Checksum{res.Val.name, hash.Sum(nil)}}:
+			case out <- cs:
 			case <-ctx.Done():
-				out <- Result[Checksum]{Err: fmt.Errorf("digester: file %s: %w", res.Val.name, ctx.Err())}
+				cs.Err = fmt.Errorf("digest %s: %w", cs.Name, ctx.Err())
+				out <- cs
 			}
 		}
 	}()

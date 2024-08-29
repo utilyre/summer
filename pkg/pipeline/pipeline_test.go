@@ -9,7 +9,7 @@ func TestPipeline_Append(t *testing.T) {
 		}
 	}()
 
-	var pl Pipeline
+	var pl Pipeline[struct{}]
 	pl.Append(0, nil)
 	pl.Append(-2, nil)
 	pl.AppendFunc(0, nil)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"iter"
 
 	"github.com/utilyre/summer/pkg/pipeline"
@@ -135,13 +136,18 @@ func WithDigestJobs(n int) Option {
 	}
 }
 
+// A Checksum represents name and hash of a particular file.
+type Checksum struct {
+	Name string
+	Hash []byte
+	Err  error
+
+	body io.ReadCloser
+}
+
 // SumTree recursively generates checksums for each file under all roots in
 // parallel.
-func SumTree(
-	ctx context.Context,
-	roots []string,
-	opts ...Option,
-) (iter.Seq[Result[Checksum]], error) {
+func SumTree(ctx context.Context, roots []string, opts ...Option) (iter.Seq[*Checksum], error) {
 	o := &options{
 		algo:       AlgorithmMD5,
 		readJobs:   1,
@@ -153,15 +159,14 @@ func SumTree(
 		}
 	}
 
-	var pl pipeline.Pipeline
+	var pl pipeline.Pipeline[*Checksum]
 	pl.Append(o.readJobs, readPipe{})
 	pl.Append(o.digestJobs, digestPipe{o.algo})
-	out := pl.Pipe(ctx, walkPipe{roots}.Pipe(ctx, nil))
+	out := pl.Pipe(ctx, walkDirs(ctx, roots))
 
-	return func(yield func(Result[Checksum]) bool) {
-		for v := range out {
-			sum := v.(Result[Checksum])
-			if !yield(sum) {
+	return func(yield func(*Checksum) bool) {
+		for cs := range out {
+			if !yield(cs) {
 				return
 			}
 		}

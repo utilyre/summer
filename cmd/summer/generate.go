@@ -28,7 +28,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	results, err := summer.SumTree(
+	checksums, err := summer.SumTree(
 		ctx,
 		args,
 		summer.WithAlgorithm(algo),
@@ -39,13 +39,13 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	for res := range results {
-		if res.Err != nil {
-			fmt.Fprintln(os.Stderr, "summer:", res.Err)
+	for cs := range checksums {
+		if cs.Err != nil {
+			fmt.Fprintln(os.Stderr, "summer:", cs.Err)
 			continue
 		}
 
-		fmt.Printf("%x  %s\n", res.Val.Hash, res.Val.Name)
+		fmt.Printf("%x  %s\n", cs.Hash, cs.Name)
 	}
 
 	return nil
