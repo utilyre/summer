@@ -31,6 +31,7 @@ func newCommand() *cobra.Command {
 	cmdGenerate := &cobra.Command{
 		Use:   "generate [files]",
 		Short: "Generate checksums for given files",
+		Args:  cobra.MinimumNArgs(1),
 		RunE:  runGenerate,
 	}
 	fset = cmdGenerate.Flags()

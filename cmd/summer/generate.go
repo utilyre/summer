@@ -14,10 +14,6 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	ctx, cancel := cli.NewContext(time.Duration(timeout) * time.Millisecond)
 	defer cancel()
 
-	if len(args) == 0 {
-		args = append(args, ".")
-	}
-
 	fset := cmd.LocalFlags()
 	readJobs, err := fset.GetInt("read-jobs")
 	if err != nil {
