@@ -28,7 +28,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	checksums, err := summer.SumTree(
+	checksums, err := summer.Sum(
 		ctx,
 		args,
 		summer.WithAlgorithm(algo),

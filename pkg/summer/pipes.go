@@ -56,6 +56,40 @@ func walkDirs(ctx context.Context, roots []string) <-chan *Checksum {
 	return out
 }
 
+func walkFiles(ctx context.Context, names []string) <-chan *Checksum {
+	out := make(chan *Checksum)
+
+	go func() {
+		defer close(out)
+
+		for _, name := range names {
+			cs := &Checksum{Name: name}
+
+			info, err := os.Stat(name)
+			if err != nil {
+				cs.Err = fmt.Errorf("walk %s: %w", name, err)
+				out <- cs
+				continue
+			}
+
+			if info.IsDir() {
+				cs.Err = fmt.Errorf("walk %s: is a directory", name)
+				out <- cs
+				continue
+			}
+
+			select {
+			case out <- cs:
+			case <-ctx.Done():
+				cs.Err = fmt.Errorf("walk %s: %w", cs.Name, ctx.Err())
+				out <- cs
+			}
+		}
+	}()
+
+	return out
+}
+
 type readPipe struct{}
 
 func (rp readPipe) Pipe(ctx context.Context, in <-chan *Checksum) <-chan *Checksum {

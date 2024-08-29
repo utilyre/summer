@@ -94,6 +94,7 @@ type options struct {
 	algo       Algorithm
 	readJobs   int
 	digestJobs int
+	recursive  bool
 }
 
 // WithAlgorithm sets the used hash function.
@@ -136,6 +137,14 @@ func WithDigestJobs(n int) Option {
 	}
 }
 
+// WithRecursive sets recursive to v.
+func WithRecursive(v bool) Option {
+	return func(o *options) error {
+		o.recursive = v
+		return nil
+	}
+}
+
 // A Checksum represents name and hash of a particular file.
 type Checksum struct {
 	Name string
@@ -145,13 +154,13 @@ type Checksum struct {
 	body io.ReadCloser
 }
 
-// SumTree recursively generates checksums for each file under all roots in
-// parallel.
-func SumTree(ctx context.Context, roots []string, opts ...Option) (iter.Seq[*Checksum], error) {
+// Sum generates a checksum for each file in parallel.
+func Sum(ctx context.Context, names []string, opts ...Option) (iter.Seq[*Checksum], error) {
 	o := &options{
 		algo:       AlgorithmMD5,
 		readJobs:   1,
 		digestJobs: 1,
+		recursive:  true,
 	}
 	for _, opt := range opts {
 		if err := opt(o); err != nil {
@@ -162,8 +171,15 @@ func SumTree(ctx context.Context, roots []string, opts ...Option) (iter.Seq[*Che
 	var pl pipeline.Pipeline[*Checksum]
 	pl.Append(o.readJobs, readPipe{})
 	pl.Append(o.digestJobs, digestPipe{o.algo})
-	out := pl.Pipe(ctx, walkDirs(ctx, roots))
 
+	var namesCh <-chan *Checksum
+	if o.recursive {
+		namesCh = walkDirs(ctx, names)
+	} else {
+		namesCh = walkFiles(ctx, names)
+	}
+
+	out := pl.Pipe(ctx, namesCh)
 	return func(yield func(*Checksum) bool) {
 		for cs := range out {
 			if !yield(cs) {
