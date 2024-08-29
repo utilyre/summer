@@ -160,7 +160,7 @@ func Sum(ctx context.Context, names []string, opts ...Option) (iter.Seq[*Checksu
 		algo:       AlgorithmMD5,
 		readJobs:   1,
 		digestJobs: 1,
-		recursive:  true,
+		recursive:  false,
 	}
 	for _, opt := range opts {
 		if err := opt(o); err != nil {
