@@ -27,6 +27,10 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	recursive, err := fset.GetBool("recursive")
+	if err != nil {
+		return err
+	}
 
 	checksums, err := summer.Sum(
 		ctx,
@@ -34,6 +38,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		summer.WithAlgorithm(algo),
 		summer.WithReadJobs(readJobs),
 		summer.WithDigestJobs(digestJobs),
+		summer.WithRecursive(recursive),
 	)
 	if err != nil {
 		return err

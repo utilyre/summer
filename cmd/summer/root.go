@@ -36,6 +36,7 @@ func newCommand() *cobra.Command {
 	fset = cmdGenerate.Flags()
 	fset.Int("read-jobs", 1, "run given number of read jobs in parallel")
 	fset.Int("digest-jobs", 1, "run given number of digest jobs in parallel")
+	fset.BoolP("recursive", "r", false, "walk files recursively")
 
 	cmd.AddCommand(cmdVersion, cmdGenerate)
 	return cmd
