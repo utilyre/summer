@@ -2,7 +2,7 @@
   <h1>
     summer
     <br />
-    <a href="httpshttps://github.com/utilyre/summer/releases/latest">
+    <a href="https://github.com/utilyre/summer/releases/latest">
       <img alt="license" src="https://img.shields.io/github/v/tag/utilyre/summer?label=version" />
     </a>
     <a href="https://go.dev">
