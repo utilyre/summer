@@ -32,27 +32,24 @@
 
 ## Usage
 
-For starters, if you just run the generate command (without any arguments), it
-should give you the checksum of every file in your current directory.
+For starters, you can run the `generate` command on any file:
 
 ```
-$ summer generate
-081ecc5e6dd6ba0d150fc4bc0e62ec50  bar
+$ summer generate foo bar
 764efa883dda1e11db47671c4a3bbd9e  foo
-168065a0236e2e64c9c6cdd086c55f63  nested/baz
+081ecc5e6dd6ba0d150fc4bc0e62ec50  bar
 ```
 
-In case you only care about certain files/directories, list those as arguments.
+Add the `-r` flag to generate checksums for directories recursively:
 
 ```
-$ summer generate bar nested
+$ summer generate -r bar nested
 081ecc5e6dd6ba0d150fc4bc0e62ec50  bar
 168065a0236e2e64c9c6cdd086c55f63  nested/baz
 ```
 
-To utilize more cores of your CPU, pass `--read-workers=n` and
-`--digest-workers=m` flags, where `n` and `m` are the number of workers used
-for each task respectively.
+To utilize more cores of your CPU, pass `--read-jobs=n` and `--digest-jobs=m`
+flags, where `n` and `m` are the number of jobs used for each task respectively.
 
 Run `summer help generate` to learn more about different flags.
 
