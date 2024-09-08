@@ -97,7 +97,7 @@ type options struct {
 	recursive  bool
 }
 
-// WithAlgorithm sets the used hash function.
+// WithAlgorithm determines what hash function to use.
 func WithAlgorithm(algo Algorithm) Option {
 	return func(o *options) error {
 		o.algo = algo
@@ -105,7 +105,7 @@ func WithAlgorithm(algo Algorithm) Option {
 	}
 }
 
-// WithReadJobs sets number of read jobs.
+// WithReadJobs determines how many jobs to spin up for reading.
 func WithReadJobs(n int) Option {
 	return func(o *options) error {
 		if n <= 0 {
@@ -121,7 +121,7 @@ func WithReadJobs(n int) Option {
 	}
 }
 
-// WithDigestJobs sets number of digest jobs.
+// WithReadJobs determines how many jobs to spin up for digesting.
 func WithDigestJobs(n int) Option {
 	return func(o *options) error {
 		if n <= 0 {
@@ -137,7 +137,7 @@ func WithDigestJobs(n int) Option {
 	}
 }
 
-// WithRecursive sets recursive to v.
+// WithRecursive determines whether to walk recursively.
 func WithRecursive(v bool) Option {
 	return func(o *options) error {
 		o.recursive = v
