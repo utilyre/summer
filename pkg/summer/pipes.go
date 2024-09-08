@@ -10,13 +10,11 @@ import (
 	"hash"
 	"io"
 	"io/fs"
-	"os"
-	"path/filepath"
 
 	"github.com/dolmen-go/contextio"
 )
 
-func walkDirs(ctx context.Context, roots []string) <-chan Checksum {
+func walkDirs(ctx context.Context, fsys fs.FS, roots []string) <-chan Checksum {
 	out := make(chan Checksum)
 
 	go func() {
@@ -49,14 +47,14 @@ func walkDirs(ctx context.Context, roots []string) <-chan Checksum {
 
 		for _, root := range roots {
 			// NOTE: errors are handled by walk
-			_ = filepath.WalkDir(root, walk)
+			_ = fs.WalkDir(fsys, root, walk)
 		}
 	}()
 
 	return out
 }
 
-func walkFiles(ctx context.Context, names []string) <-chan Checksum {
+func walkFiles(ctx context.Context, fsys fs.FS, names []string) <-chan Checksum {
 	out := make(chan Checksum)
 
 	go func() {
@@ -65,7 +63,7 @@ func walkFiles(ctx context.Context, names []string) <-chan Checksum {
 		for _, name := range names {
 			cs := Checksum{Name: name}
 
-			info, err := os.Stat(name)
+			info, err := fs.Stat(fsys, name)
 			if err != nil {
 				cs.Err = fmt.Errorf("walk %s: %w", name, err)
 				out <- cs
@@ -90,7 +88,9 @@ func walkFiles(ctx context.Context, names []string) <-chan Checksum {
 	return out
 }
 
-type readPipe struct{}
+type readPipe struct {
+	fsys fs.FS
+}
 
 func (rp readPipe) Pipe(ctx context.Context, in <-chan Checksum) <-chan Checksum {
 	out := make(chan Checksum)
@@ -104,7 +104,7 @@ func (rp readPipe) Pipe(ctx context.Context, in <-chan Checksum) <-chan Checksum
 				continue
 			}
 
-			f, err := os.Open(cs.Name)
+			f, err := rp.fsys.Open(cs.Name)
 			if err != nil {
 				cs.Err = fmt.Errorf("read %s: %w", cs.Name, err)
 				out <- cs

@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"iter"
+	"os"
 
 	"github.com/utilyre/summer/pkg/pipeline"
 )
 
 var (
+	ErrNilValue           = errors.New("nil value")
 	ErrInvalidText        = errors.New("invalid text")
 	ErrNonPositiveInteger = errors.New("non-positive integer")
 )
@@ -21,6 +24,7 @@ type Summer struct {
 
 func New(opts ...Option) (*Summer, error) {
 	o := options{
+		fsys:       os.DirFS("."),
 		algo:       AlgorithmMD5,
 		readJobs:   1,
 		digestJobs: 1,
@@ -37,14 +41,14 @@ func New(opts ...Option) (*Summer, error) {
 
 func (s *Summer) Sum(ctx context.Context, names []string) (iter.Seq[Checksum], error) {
 	var pl pipeline.Pipeline[Checksum]
-	pl.Append(s.opts.readJobs, readPipe{})
+	pl.Append(s.opts.readJobs, readPipe{s.opts.fsys})
 	pl.Append(s.opts.digestJobs, digestPipe{s.opts.algo})
 
 	var namesCh <-chan Checksum
 	if s.opts.recursive {
-		namesCh = walkDirs(ctx, names)
+		namesCh = walkDirs(ctx, s.opts.fsys, names)
 	} else {
-		namesCh = walkFiles(ctx, names)
+		namesCh = walkFiles(ctx, s.opts.fsys, names)
 	}
 
 	out := pl.Pipe(ctx, namesCh)
@@ -143,10 +147,27 @@ func (e OptionError) Unwrap() error {
 }
 
 type options struct {
+	fsys       fs.FS
 	algo       Algorithm
 	readJobs   int
 	digestJobs int
 	recursive  bool
+}
+
+// WithFS determines what filesystem to walk.
+func WithFS(fsys fs.FS) Option {
+	return func(o *options) error {
+		if fsys == nil {
+			return OptionError{
+				Which: "fs",
+				Value: fsys,
+				Err:   ErrNilValue,
+			}
+		}
+
+		o.fsys = fsys
+		return nil
+	}
 }
 
 // WithAlgorithm determines what hash function to use.
