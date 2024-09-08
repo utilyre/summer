@@ -69,7 +69,7 @@ import (
 )
 
 func main() {
-	results, err := summer.SumTree(context.TODO(), []string{"."})
+	results, err := summer.Sum(context.TODO(), []string{"file.txt"})
 	if err != nil {
 		log.Fatal(err)
 	}
