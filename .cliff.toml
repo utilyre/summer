@@ -1,0 +1,28 @@
+[changelog]
+header = """
+# Changelog
+
+All notable changes to this project are documented in this file.
+"""
+
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+  ## {{ group }}
+  {% for commit in commits %}
+    - [`{{ commit.id | truncate(length=7,end="") }}`](https://github.com/utilyre/summer/commit/{{ commit.id }}): {{ commit.message | upper_first }}{% if commit.breaking %} — **BREAKING**{% endif %}
+  {% endfor %}
+{% endfor %}
+"""
+
+[git]
+filter_commits = true
+commit_parsers = [
+  { message = "^feat", group = "🚀 New Features" },
+  { message = "^fix", group = "🐛 Bug Fixes" },
+  { message = "^doc", group = "📚 Documentation Changes" },
+  { message = "^perf", group = "⚡ Performance Improvements" },
+  { message = "^refactor", group = "🚜 Refactors" },
+  { message = "^style", group = "🎨 Formatting Adjustments" },
+  { message = "^test", group = "🧪 Testing Changes" },
+  { message = "^chore", group = "⚙️ Miscellaneous Tasks"},
+]
