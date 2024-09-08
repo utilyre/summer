@@ -32,12 +32,33 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          # TODO: add a prefix to distinguish from changelog
           name: ${{ matrix.os }}-${{ matrix.arch }}
           path: summer-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
 
+  changelog:
+    name: Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: orhun/git-cliff-action@v4
+        with:
+          args: -vvl -sheader
+          config: .cliff.toml
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: CHANGELOG.md
+
   release:
     name: Release
-    needs: build
+    needs: [build, changelog]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -50,6 +71,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
+          body_path: changelog/CHANGELOG.md
           files: |
             *.tar.gz
             sha256sums.txt
