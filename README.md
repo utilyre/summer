@@ -53,6 +53,12 @@ flags, where `n` and `m` are the number of jobs used for each task respectively.
 
 Run `summer help generate` to learn more about different flags.
 
+## Testing
+
+```bash
+go test -v ./...
+```
+
 ## API
 
 It is possible to call the API of this utility directly in your own
