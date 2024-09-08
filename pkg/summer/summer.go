@@ -39,7 +39,7 @@ func New(opts ...Option) (*Summer, error) {
 	return &Summer{options: o}, nil
 }
 
-func (s *Summer) Sum(ctx context.Context, names []string) (iter.Seq[Checksum], error) {
+func (s *Summer) Sum(ctx context.Context, names ...string) (iter.Seq[Checksum], error) {
 	var pl pipeline.Pipeline[Checksum]
 	pl.Append(s.readJobs, readPipe{s.fsys})
 	pl.Append(s.digestJobs, digestPipe{s.algo})

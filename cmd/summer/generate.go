@@ -38,7 +38,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	checksums, err := s.Sum(ctx, args)
+	checksums, err := s.Sum(ctx, args...)
 	if err != nil {
 		return err
 	}
