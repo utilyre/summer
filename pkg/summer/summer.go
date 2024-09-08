@@ -19,7 +19,7 @@ var (
 )
 
 type Summer struct {
-	opts options
+	options
 }
 
 func New(opts ...Option) (*Summer, error) {
@@ -36,19 +36,19 @@ func New(opts ...Option) (*Summer, error) {
 		}
 	}
 
-	return &Summer{opts: o}, nil
+	return &Summer{options: o}, nil
 }
 
 func (s *Summer) Sum(ctx context.Context, names []string) (iter.Seq[Checksum], error) {
 	var pl pipeline.Pipeline[Checksum]
-	pl.Append(s.opts.readJobs, readPipe{s.opts.fsys})
-	pl.Append(s.opts.digestJobs, digestPipe{s.opts.algo})
+	pl.Append(s.readJobs, readPipe{s.fsys})
+	pl.Append(s.digestJobs, digestPipe{s.algo})
 
 	var namesCh <-chan Checksum
-	if s.opts.recursive {
-		namesCh = walkDirs(ctx, s.opts.fsys, names)
+	if s.recursive {
+		namesCh = walkDirs(ctx, s.fsys, names)
 	} else {
-		namesCh = walkFiles(ctx, s.opts.fsys, names)
+		namesCh = walkFiles(ctx, s.fsys, names)
 	}
 
 	out := pl.Pipe(ctx, namesCh)
