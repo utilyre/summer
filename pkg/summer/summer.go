@@ -15,6 +15,49 @@ var (
 	ErrNonPositiveInteger = errors.New("non-positive integer")
 )
 
+type Summer struct {
+	opts options
+}
+
+func New(opts ...Option) (*Summer, error) {
+	o := options{
+		algo:       AlgorithmMD5,
+		readJobs:   1,
+		digestJobs: 1,
+		recursive:  false,
+	}
+	for _, opt := range opts {
+		if err := opt(&o); err != nil {
+			return nil, err
+		}
+	}
+
+	return &Summer{opts: o}, nil
+}
+
+func (s *Summer) Sum(ctx context.Context, names []string) (iter.Seq[Checksum], error) {
+	var pl pipeline.Pipeline[Checksum]
+	pl.Append(s.opts.readJobs, readPipe{})
+	pl.Append(s.opts.digestJobs, digestPipe{s.opts.algo})
+
+	var namesCh <-chan Checksum
+	if s.opts.recursive {
+		namesCh = walkDirs(ctx, names)
+	} else {
+		namesCh = walkFiles(ctx, names)
+	}
+
+	out := pl.Pipe(ctx, namesCh)
+
+	return func(yield func(Checksum) bool) {
+		for cs := range out {
+			if !yield(cs) {
+				return
+			}
+		}
+	}, nil
+}
+
 // An Algorithm represents a supported hash function.
 type Algorithm int
 
@@ -152,39 +195,4 @@ func WithRecursive(v bool) Option {
 		o.recursive = v
 		return nil
 	}
-}
-
-// Sum generates a checksum for each file in parallel.
-func Sum(ctx context.Context, names []string, opts ...Option) (iter.Seq[Checksum], error) {
-	o := &options{
-		algo:       AlgorithmMD5,
-		readJobs:   1,
-		digestJobs: 1,
-		recursive:  false,
-	}
-	for _, opt := range opts {
-		if err := opt(o); err != nil {
-			return nil, err
-		}
-	}
-
-	var pl pipeline.Pipeline[Checksum]
-	pl.Append(o.readJobs, readPipe{})
-	pl.Append(o.digestJobs, digestPipe{o.algo})
-
-	var namesCh <-chan Checksum
-	if o.recursive {
-		namesCh = walkDirs(ctx, names)
-	} else {
-		namesCh = walkFiles(ctx, names)
-	}
-
-	out := pl.Pipe(ctx, namesCh)
-	return func(yield func(Checksum) bool) {
-		for cs := range out {
-			if !yield(cs) {
-				return
-			}
-		}
-	}, nil
 }

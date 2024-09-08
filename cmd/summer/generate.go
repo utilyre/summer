@@ -28,14 +28,17 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	checksums, err := summer.Sum(
-		ctx,
-		args,
+	s, err := summer.New(
 		summer.WithAlgorithm(algo),
 		summer.WithReadJobs(readJobs),
 		summer.WithDigestJobs(digestJobs),
 		summer.WithRecursive(recursive),
 	)
+	if err != nil {
+		return err
+	}
+
+	checksums, err := s.Sum(ctx, args)
 	if err != nil {
 		return err
 	}
