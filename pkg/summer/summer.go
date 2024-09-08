@@ -72,6 +72,15 @@ func (algo *Algorithm) UnmarshalText(text []byte) error {
 	}
 }
 
+// A Checksum represents name and hash of a particular file.
+type Checksum struct {
+	Name string
+	Hash []byte
+	Err  error
+
+	body io.ReadCloser
+}
+
 // An Option represents an optional parameter given to SumTree.
 type Option func(o *options) error
 
@@ -143,15 +152,6 @@ func WithRecursive(v bool) Option {
 		o.recursive = v
 		return nil
 	}
-}
-
-// A Checksum represents name and hash of a particular file.
-type Checksum struct {
-	Name string
-	Hash []byte
-	Err  error
-
-	body io.ReadCloser
 }
 
 // Sum generates a checksum for each file in parallel.
