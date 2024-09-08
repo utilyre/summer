@@ -1,11 +1,8 @@
 [changelog]
-header = """
-# Changelog
-
-All notable changes to this project are documented in this file.
-"""
-
 body = """
+# SUMMER {{ version }}
+
+We’re excited to announce that the next version of **summer** has officially been released! Enjoy the new features and improvements!
 {% for group, commits in commits | group_by(attribute="group") %}
   ## {{ group }}
   {% for commit in commits %}
