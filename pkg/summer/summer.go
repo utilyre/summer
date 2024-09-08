@@ -155,7 +155,7 @@ type Checksum struct {
 }
 
 // Sum generates a checksum for each file in parallel.
-func Sum(ctx context.Context, names []string, opts ...Option) (iter.Seq[*Checksum], error) {
+func Sum(ctx context.Context, names []string, opts ...Option) (iter.Seq[Checksum], error) {
 	o := &options{
 		algo:       AlgorithmMD5,
 		readJobs:   1,
@@ -168,11 +168,11 @@ func Sum(ctx context.Context, names []string, opts ...Option) (iter.Seq[*Checksu
 		}
 	}
 
-	var pl pipeline.Pipeline[*Checksum]
+	var pl pipeline.Pipeline[Checksum]
 	pl.Append(o.readJobs, readPipe{})
 	pl.Append(o.digestJobs, digestPipe{o.algo})
 
-	var namesCh <-chan *Checksum
+	var namesCh <-chan Checksum
 	if o.recursive {
 		namesCh = walkDirs(ctx, names)
 	} else {
@@ -180,7 +180,7 @@ func Sum(ctx context.Context, names []string, opts ...Option) (iter.Seq[*Checksu
 	}
 
 	out := pl.Pipe(ctx, namesCh)
-	return func(yield func(*Checksum) bool) {
+	return func(yield func(Checksum) bool) {
 		for cs := range out {
 			if !yield(cs) {
 				return

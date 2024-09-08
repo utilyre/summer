@@ -16,14 +16,14 @@ import (
 	"github.com/dolmen-go/contextio"
 )
 
-func walkDirs(ctx context.Context, roots []string) <-chan *Checksum {
-	out := make(chan *Checksum)
+func walkDirs(ctx context.Context, roots []string) <-chan Checksum {
+	out := make(chan Checksum)
 
 	go func() {
 		defer close(out)
 
 		walk := func(name string, dirEntry fs.DirEntry, err error) error {
-			cs := &Checksum{Name: name}
+			cs := Checksum{Name: name}
 
 			if err != nil {
 				cs.Err = fmt.Errorf("walk %s: %w", cs.Name, err)
@@ -56,14 +56,14 @@ func walkDirs(ctx context.Context, roots []string) <-chan *Checksum {
 	return out
 }
 
-func walkFiles(ctx context.Context, names []string) <-chan *Checksum {
-	out := make(chan *Checksum)
+func walkFiles(ctx context.Context, names []string) <-chan Checksum {
+	out := make(chan Checksum)
 
 	go func() {
 		defer close(out)
 
 		for _, name := range names {
-			cs := &Checksum{Name: name}
+			cs := Checksum{Name: name}
 
 			info, err := os.Stat(name)
 			if err != nil {
@@ -92,8 +92,8 @@ func walkFiles(ctx context.Context, names []string) <-chan *Checksum {
 
 type readPipe struct{}
 
-func (rp readPipe) Pipe(ctx context.Context, in <-chan *Checksum) <-chan *Checksum {
-	out := make(chan *Checksum)
+func (rp readPipe) Pipe(ctx context.Context, in <-chan Checksum) <-chan Checksum {
+	out := make(chan Checksum)
 
 	go func() {
 		defer close(out)
@@ -129,8 +129,8 @@ type digestPipe struct {
 	algo Algorithm
 }
 
-func (dp digestPipe) Pipe(ctx context.Context, in <-chan *Checksum) <-chan *Checksum {
-	out := make(chan *Checksum)
+func (dp digestPipe) Pipe(ctx context.Context, in <-chan Checksum) <-chan Checksum {
+	out := make(chan Checksum)
 
 	go func() {
 		defer close(out)
