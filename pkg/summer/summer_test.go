@@ -8,6 +8,23 @@ import (
 	"testing/fstest"
 )
 
+func TestSummer_Sum(t *testing.T) {
+	fsys, err := newMockFS()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := New(WithFS(fsys), WithRecursive(true))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	if _, err := s.Sum(ctx, "."); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func BenchmarkSummer_Sum(b *testing.B) {
 	fsys, err := newMockFS()
 	if err != nil {
