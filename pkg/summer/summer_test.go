@@ -19,9 +19,16 @@ func TestSummer_Sum(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := context.Background()
-	if _, err := s.Sum(ctx, "."); err != nil {
+	checksums, err := s.Sum(context.Background(), ".")
+	if err != nil {
 		t.Fatal(err)
+	}
+
+	for cs := range checksums {
+		if cs.Err != nil {
+			t.Error(err)
+			continue
+		}
 	}
 }
 
