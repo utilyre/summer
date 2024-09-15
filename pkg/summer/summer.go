@@ -22,9 +22,15 @@ type Summer struct {
 	options
 }
 
+type defaultFS struct{}
+
+func (defaultFS) Open(name string) (fs.File, error) {
+	return os.Open(name)
+}
+
 func New(opts ...Option) (*Summer, error) {
 	o := options{
-		fsys:       os.DirFS("."),
+		fsys:       defaultFS{},
 		algo:       AlgorithmMD5,
 		readJobs:   1,
 		digestJobs: 1,
