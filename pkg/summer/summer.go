@@ -18,6 +18,7 @@ var (
 	ErrNonPositiveInteger = errors.New("non-positive integer")
 )
 
+// A Summer holds configuration for generating checksums.
 type Summer struct {
 	options
 }
@@ -28,6 +29,7 @@ func (defaultFS) Open(name string) (fs.File, error) {
 	return os.Open(name)
 }
 
+// New creates and configures a new instance of Summer.
 func New(opts ...Option) (*Summer, error) {
 	o := options{
 		fsys:         defaultFS{},
@@ -45,6 +47,7 @@ func New(opts ...Option) (*Summer, error) {
 	return &Summer{options: o}, nil
 }
 
+// Sum generates a checksum for each given file name in parallel.
 func (s *Summer) Sum(ctx context.Context, names ...string) (iter.Seq[Checksum], error) {
 	var pl pipeline.Pipeline[Checksum]
 	pl.Append(s.openFileJobs, openFilePipe{s.fsys})
