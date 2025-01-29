@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"math/rand"
+	"runtime"
 	"testing"
 	"testing/fstest"
 
@@ -72,6 +73,8 @@ func benchmarkSummer_Sum(b *testing.B, recursive bool) {
 			checksum = cs
 		}
 		globalChecksum = checksum // to avoid compiler optimization
+
+		b.Logf("#%d: number of active goroutines: %d", i, runtime.NumGoroutine())
 	}
 }
 
