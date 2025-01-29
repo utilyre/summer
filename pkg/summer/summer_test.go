@@ -51,6 +51,8 @@ func benchmarkSummer_Sum(b *testing.B, recursive bool) {
 		s, err := summer.New(
 			summer.WithFS(newMockFS(b, 100)),
 			summer.WithRecursive(recursive),
+			summer.WithOpenFileJobs(8),
+			summer.WithDigestJobs(8),
 		)
 		if err != nil {
 			b.Fatal(err)
