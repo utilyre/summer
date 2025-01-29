@@ -35,32 +35,28 @@ func TestSummer_Sum(t *testing.T) {
 }
 
 func BenchmarkSummer_Sum(b *testing.B) {
-	s, err := summer.New(summer.WithFS(newMockFS(b, 100)))
-	if err != nil {
-		b.Fatal(err)
-	}
-	ctx := context.Background()
-
-	b.ResetTimer()
-	benchmarkSummer_Sum(b, ctx, s)
+	benchmarkSummer_Sum(b, false)
 }
 
 func BenchmarkSummer_Sum_recursive(b *testing.B) {
-	s, err := summer.New(
-		summer.WithFS(newMockFS(b, 100)),
-		summer.WithRecursive(true),
-	)
-	if err != nil {
-		b.Fatal(err)
-	}
-	ctx := context.Background()
-
-	b.ResetTimer()
-	benchmarkSummer_Sum(b, ctx, s)
+	benchmarkSummer_Sum(b, true)
 }
 
-func benchmarkSummer_Sum(b *testing.B, ctx context.Context, s *summer.Summer) {
+func benchmarkSummer_Sum(b *testing.B, recursive bool) {
+	ctx := context.Background()
+	b.ResetTimer()
+
 	for range b.N {
+		b.StopTimer()
+		s, err := summer.New(
+			summer.WithFS(newMockFS(b, 100)),
+			summer.WithRecursive(recursive),
+		)
+		if err != nil {
+			b.Fatal(err)
+		}
+		b.StartTimer()
+
 		checksums, err := s.Sum(ctx, ".")
 		if err != nil {
 			b.Error(err)
