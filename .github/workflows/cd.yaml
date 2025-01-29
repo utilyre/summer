@@ -32,8 +32,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          # TODO: add a prefix to distinguish from changelog
-          name: ${{ matrix.os }}-${{ matrix.arch }}
+          name: build-${{ matrix.os }}-${{ matrix.arch }}
           path: summer-${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
 
   changelog:
@@ -65,7 +64,7 @@ jobs:
         with:
           path: .
 
-      - run: mv */*.tar.gz .
+      - run: mv build-*/*.tar.gz .
       - run: sha256sum *.tar.gz > sha256sums.txt
 
       - uses: softprops/action-gh-release@v2
