@@ -48,8 +48,9 @@ $ summer generate -r bar nested
 168065a0236e2e64c9c6cdd086c55f63  nested/baz
 ```
 
-To utilize more cores of your CPU, pass `--read-jobs=n` and `--digest-jobs=m`
-flags, where `n` and `m` are the number of jobs used for each task respectively.
+To utilize more cores of your CPU, pass `--open-file-jobs=n` and
+`--digest-jobs=m` flags, where `n` and `m` are the number of jobs used for each
+task respectively.
 
 Run `summer help generate` to learn more about different flags.
 

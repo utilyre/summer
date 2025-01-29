@@ -88,11 +88,11 @@ func walkFiles(ctx context.Context, fsys fs.FS, names []string) <-chan Checksum 
 	return out
 }
 
-type readPipe struct {
+type openFilePipe struct {
 	fsys fs.FS
 }
 
-func (rp readPipe) Pipe(ctx context.Context, in <-chan Checksum) <-chan Checksum {
+func (rp openFilePipe) Pipe(ctx context.Context, in <-chan Checksum) <-chan Checksum {
 	out := make(chan Checksum)
 
 	go func() {
@@ -106,7 +106,7 @@ func (rp readPipe) Pipe(ctx context.Context, in <-chan Checksum) <-chan Checksum
 
 			f, err := rp.fsys.Open(cs.Name)
 			if err != nil {
-				cs.Err = fmt.Errorf("read %s: %w", cs.Name, err)
+				cs.Err = fmt.Errorf("open file %s: %w", cs.Name, err)
 				out <- cs
 				continue
 			}
@@ -116,7 +116,7 @@ func (rp readPipe) Pipe(ctx context.Context, in <-chan Checksum) <-chan Checksum
 			select {
 			case out <- cs:
 			case <-ctx.Done():
-				cs.Err = fmt.Errorf("read %s: %w", cs.Name, ctx.Err())
+				cs.Err = fmt.Errorf("open file %s: %w", cs.Name, ctx.Err())
 				out <- cs
 			}
 		}

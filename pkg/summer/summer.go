@@ -30,11 +30,11 @@ func (defaultFS) Open(name string) (fs.File, error) {
 
 func New(opts ...Option) (*Summer, error) {
 	o := options{
-		fsys:       defaultFS{},
-		algo:       AlgorithmMD5,
-		readJobs:   1,
-		digestJobs: 1,
-		recursive:  false,
+		fsys:         defaultFS{},
+		algo:         AlgorithmMD5,
+		openFileJobs: 1,
+		digestJobs:   1,
+		recursive:    false,
 	}
 	for _, opt := range opts {
 		if err := opt(&o); err != nil {
@@ -47,7 +47,7 @@ func New(opts ...Option) (*Summer, error) {
 
 func (s *Summer) Sum(ctx context.Context, names ...string) (iter.Seq[Checksum], error) {
 	var pl pipeline.Pipeline[Checksum]
-	pl.Append(s.readJobs, readPipe{s.fsys})
+	pl.Append(s.openFileJobs, openFilePipe{s.fsys})
 	pl.Append(s.digestJobs, digestPipe{s.algo})
 
 	var namesCh <-chan Checksum
@@ -153,11 +153,11 @@ func (e OptionError) Unwrap() error {
 }
 
 type options struct {
-	fsys       fs.FS
-	algo       Algorithm
-	readJobs   int
-	digestJobs int
-	recursive  bool
+	fsys         fs.FS
+	algo         Algorithm
+	openFileJobs int
+	digestJobs   int
+	recursive    bool
 }
 
 // WithFS determines what filesystem to walk.
@@ -184,23 +184,23 @@ func WithAlgorithm(algo Algorithm) Option {
 	}
 }
 
-// WithReadJobs determines how many jobs to spin up for reading.
-func WithReadJobs(n int) Option {
+// WithOpenFileJobs determines how many jobs to spin up for opening files.
+func WithOpenFileJobs(n int) Option {
 	return func(o *options) error {
 		if n <= 0 {
 			return OptionError{
-				Which: "read jobs",
+				Which: "open file jobs",
 				Value: n,
 				Err:   ErrNonPositiveInteger,
 			}
 		}
 
-		o.readJobs = n
+		o.openFileJobs = n
 		return nil
 	}
 }
 
-// WithReadJobs determines how many jobs to spin up for digesting.
+// WithDigestJobs determines how many jobs to spin up for digesting.
 func WithDigestJobs(n int) Option {
 	return func(o *options) error {
 		if n <= 0 {

@@ -15,7 +15,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	fset := cmd.LocalFlags()
-	readJobs, err := fset.GetInt("read-jobs")
+	openFileJobs, err := fset.GetInt("open-file-jobs")
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 
 	s, err := summer.New(
 		summer.WithAlgorithm(algo),
-		summer.WithReadJobs(readJobs),
+		summer.WithOpenFileJobs(openFileJobs),
 		summer.WithDigestJobs(digestJobs),
 		summer.WithRecursive(recursive),
 	)
