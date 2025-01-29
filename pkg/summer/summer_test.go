@@ -45,11 +45,20 @@ func BenchmarkSummer_Sum(b *testing.B) {
 
 	ctx := context.Background()
 	for range b.N {
-		if _, err := s.Sum(ctx, "."); err != nil {
+		checksums, err := s.Sum(ctx, ".")
+		if err != nil {
 			b.Error(err)
 		}
+
+		var checksum Checksum
+		for cs := range checksums {
+			checksum = cs
+		}
+		globalChecksum = checksum // to avoid compiler optimization
 	}
 }
+
+var globalChecksum Checksum
 
 func newMockFS() (fs.FS, error) {
 	foo := make([]byte, 32*1024*1024)
