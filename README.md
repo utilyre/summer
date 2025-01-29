@@ -93,5 +93,6 @@ func main() {
 }
 ```
 
-For more information visit the
-[documentation](https://pkg.go.dev/github.com/utilyre/summer).
+For more information visit the [Documentation][docs].
+
+[docs]: https://pkg.go.dev/github.com/utilyre/summer
