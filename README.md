@@ -20,6 +20,8 @@
   </p>
 </div>
 
+![Data Flow Diagram](./docs/dfd.png)
+
 ## Installation
 
 - [Latest Release](https://github.com/utilyre/summer/releases/latest)
