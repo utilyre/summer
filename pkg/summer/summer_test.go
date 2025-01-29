@@ -11,12 +11,10 @@ import (
 )
 
 func TestSummer_Sum(t *testing.T) {
-	fsys, err := newMockFS()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	s, err := summer.New(summer.WithFS(fsys), summer.WithRecursive(true))
+	s, err := summer.New(
+		summer.WithFS(newMockFS(t)),
+		summer.WithRecursive(true),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,12 +33,10 @@ func TestSummer_Sum(t *testing.T) {
 }
 
 func BenchmarkSummer_Sum(b *testing.B) {
-	fsys, err := newMockFS()
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	s, err := summer.New(summer.WithFS(fsys), summer.WithRecursive(true))
+	s, err := summer.New(
+		summer.WithFS(newMockFS(b)),
+		summer.WithRecursive(true),
+	)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -65,25 +61,25 @@ func BenchmarkSummer_Sum(b *testing.B) {
 
 var globalChecksum summer.Checksum
 
-func newMockFS() (fs.FS, error) {
+func newMockFS(tb testing.TB) fs.FS {
 	foo := make([]byte, 32*1024*1024)
 	if _, err := rand.Read(foo); err != nil {
-		return nil, err
+		tb.Fatal("newMockFS:", err)
 	}
 
 	bar := make([]byte, 32*1024*1024)
 	if _, err := rand.Read(bar); err != nil {
-		return nil, err
+		tb.Fatal("newMockFS:", err)
 	}
 
 	baz := make([]byte, 32*1024*1024)
 	if _, err := rand.Read(baz); err != nil {
-		return nil, err
+		tb.Fatal("newMockFS:", err)
 	}
 
 	return fstest.MapFS{
 		"foo": {Data: foo},
 		"bar": {Data: bar},
 		"baz": {Data: baz},
-	}, nil
+	}
 }
