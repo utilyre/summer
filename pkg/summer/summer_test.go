@@ -44,6 +44,9 @@ func BenchmarkSummer_Sum(b *testing.B) {
 	}
 
 	ctx := context.Background()
+
+	b.ResetTimer()
+
 	for range b.N {
 		checksums, err := s.Sum(ctx, ".")
 		if err != nil {
