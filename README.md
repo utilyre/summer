@@ -56,12 +56,6 @@ task respectively.
 
 Run `summer help generate` to learn more about different flags.
 
-## Testing
-
-```bash
-go test -v ./...
-```
-
 ## API
 
 It is possible to call the API of this utility directly in your own
@@ -78,18 +72,26 @@ import (
 )
 
 func main() {
-	results, err := summer.Sum(context.TODO(), []string{"file.txt"})
+	s, err := summer.New()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for result := range results {
-		if result.Err != nil {
+	checksums, err := s.Sum(context.TODO(), "foo", "bar")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for cs := range checksums {
+		if cs.Err != nil {
 			log.Println(result.Err)
 			continue
 		}
 
-		// TODO
+		// use cs
 	}
 }
 ```
+
+For more information visit the
+[documentation](https://pkg.go.dev/github.com/utilyre/summer).
