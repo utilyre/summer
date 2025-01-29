@@ -43,7 +43,7 @@ jobs:
       - run: go install golang.org/x/perf/cmd/benchstat@latest
 
       - run: go mod download -x
-      - run: go test -run=^$ -bench=. -benchmem -count=10 ./... | tee benchmark.txt
+      - run: go test -v -run=^$ -bench=. -benchmem -count=10 ./... | tee benchmark.txt
       - run: benchstat benchmark.txt | tee summary.txt
 
       - uses: actions/upload-artifact@v4

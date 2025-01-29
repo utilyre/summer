@@ -46,7 +46,8 @@ func benchmarkSummer_Sum(b *testing.B, recursive bool) {
 	ctx := context.Background()
 	b.ResetTimer()
 
-	for range b.N {
+	for i := range b.N {
+		b.Logf("#%d: setting up", i)
 		b.StopTimer()
 		s, err := summer.New(
 			summer.WithFS(newMockFS(b, 100)),
@@ -59,11 +60,13 @@ func benchmarkSummer_Sum(b *testing.B, recursive bool) {
 		}
 		b.StartTimer()
 
+		b.Logf("#%d: starting", i)
 		checksums, err := s.Sum(ctx, ".")
 		if err != nil {
 			b.Error(err)
 		}
 
+		b.Logf("#%d: consuming results", i)
 		var checksum summer.Checksum
 		for cs := range checksums {
 			checksum = cs
@@ -75,6 +78,8 @@ func benchmarkSummer_Sum(b *testing.B, recursive bool) {
 var globalChecksum summer.Checksum
 
 func newMockFS(tb testing.TB, numFiles int) fs.FS {
+	tb.Helper()
+
 	fsys := fstest.MapFS{}
 
 	for i := range numFiles {
