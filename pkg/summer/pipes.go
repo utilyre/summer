@@ -10,51 +10,45 @@ import (
 	"hash"
 	"io"
 	"io/fs"
-	"sync"
 
 	"github.com/dolmen-go/contextio"
 )
 
 func walkDirs(ctx context.Context, fsys fs.FS, roots []string) <-chan Checksum {
 	out := make(chan Checksum)
-	walk := func(name string, dirEntry fs.DirEntry, err error) error {
-		cs := Checksum{Name: name}
-
-		if err != nil {
-			cs.Err = fmt.Errorf("walk %s: %w", cs.Name, err)
-			out <- cs
-			return nil
-		}
-		if !dirEntry.Type().IsRegular() {
-			return nil
-		}
-
-		select {
-		case out <- cs:
-		case <-ctx.Done():
-			cs.Err = fmt.Errorf("walk %s: %w", cs.Name, ctx.Err())
-			out <- cs
-
-			// return non-nil error to abort the walk
-			return cs.Err
-		}
-
-		return nil
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(len(roots))
-	for _, root := range roots {
-		go func() {
-			// NOTE: errors are handled by walk
-			_ = fs.WalkDir(fsys, root, walk)
-			wg.Done()
-		}()
-	}
 
 	go func() {
-		wg.Wait()
-		close(out)
+		defer close(out)
+
+		walk := func(name string, dirEntry fs.DirEntry, err error) error {
+			cs := Checksum{Name: name}
+
+			if err != nil {
+				cs.Err = fmt.Errorf("walk %s: %w", cs.Name, err)
+				out <- cs
+				return nil
+			}
+			if !dirEntry.Type().IsRegular() {
+				return nil
+			}
+
+			select {
+			case out <- cs:
+			case <-ctx.Done():
+				cs.Err = fmt.Errorf("walk %s: %w", cs.Name, ctx.Err())
+				out <- cs
+
+				// return non-nil error to abort the walk
+				return cs.Err
+			}
+
+			return nil
+		}
+
+		for _, root := range roots {
+			// NOTE: errors are handled by walk
+			_ = fs.WalkDir(fsys, root, walk)
+		}
 	}()
 
 	return out
