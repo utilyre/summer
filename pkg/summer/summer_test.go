@@ -1,4 +1,4 @@
-package summer
+package summer_test
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"testing"
 	"testing/fstest"
+
+	"github.com/utilyre/summer/pkg/summer"
 )
 
 func TestSummer_Sum(t *testing.T) {
@@ -14,7 +16,7 @@ func TestSummer_Sum(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := New(WithFS(fsys), WithRecursive(true))
+	s, err := summer.New(summer.WithFS(fsys), summer.WithRecursive(true))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +40,7 @@ func BenchmarkSummer_Sum(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	s, err := New(WithFS(fsys), WithRecursive(true))
+	s, err := summer.New(summer.WithFS(fsys), summer.WithRecursive(true))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -53,7 +55,7 @@ func BenchmarkSummer_Sum(b *testing.B) {
 			b.Error(err)
 		}
 
-		var checksum Checksum
+		var checksum summer.Checksum
 		for cs := range checksums {
 			checksum = cs
 		}
@@ -61,7 +63,7 @@ func BenchmarkSummer_Sum(b *testing.B) {
 	}
 }
 
-var globalChecksum Checksum
+var globalChecksum summer.Checksum
 
 func newMockFS() (fs.FS, error) {
 	foo := make([]byte, 32*1024*1024)

@@ -1,6 +1,10 @@
-package pipeline
+package pipeline_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/utilyre/summer/pkg/pipeline"
+)
 
 func TestPipeline_Append(t *testing.T) {
 	defer func() {
@@ -9,7 +13,7 @@ func TestPipeline_Append(t *testing.T) {
 		}
 	}()
 
-	var pl Pipeline[struct{}]
+	var pl pipeline.Pipeline[struct{}]
 	pl.Append(0, nil)
 	pl.Append(-2, nil)
 	pl.AppendFunc(0, nil)

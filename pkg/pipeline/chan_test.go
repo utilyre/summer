@@ -1,9 +1,11 @@
-package pipeline
+package pipeline_test
 
 import (
 	"maps"
 	"slices"
 	"testing"
+
+	"github.com/utilyre/summer/pkg/pipeline"
 )
 
 func TestAggregate(t *testing.T) {
@@ -41,7 +43,7 @@ func TestAggregate(t *testing.T) {
 				}
 			}
 
-			for x := range Aggregate(0, chans) {
+			for x := range pipeline.Aggregate(0, chans) {
 				if _, exists := want[x]; !exists {
 					t.Error("received unsupplied value:", x)
 					continue
