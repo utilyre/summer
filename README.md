@@ -124,3 +124,10 @@ By leveraging this pipeline-based approach, the tool efficiently computes
 checksums for large sets of files with minimal overhead.
 
 [pipeline]: https://pkg.go.dev/github.com/utilyre/summer/pkg/pipeline
+
+## License
+
+This project is licensed under the [Apache License 2.0][license]. You are free
+to use, modify, and distribute it under the terms of this license.
+
+[license]: https://www.apache.org/licenses/LICENSE-2.0
