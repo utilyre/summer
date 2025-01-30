@@ -20,8 +20,6 @@
   </p>
 </div>
 
-![Data Flow Diagram](./docs/dfd.png)
-
 ## Installation
 
 - [Latest Release](https://github.com/utilyre/summer/releases/latest)
@@ -96,3 +94,33 @@ func main() {
 For more information visit the [Documentation][docs].
 
 [docs]: https://pkg.go.dev/github.com/utilyre/summer
+
+## How It Works
+
+This CLI tool efficiently calculates checksums by processing files in parallel
+using a multi-stage pipeline. The pipeline architecture allows different tasks
+to be processed concurrently, optimizing performance. The process consists of
+the following stages:
+
+1. **Walk:** The tool recursively scans the given files and
+   directories, identifying all regular files. Each discovered file name is
+   then passed to the next stage.
+
+2. **Open File:** The file names are used to open the corresponding files,
+   producing data streams for their contents. These streams are then sent to
+   the next stage.
+
+3. **Digest:** Each data stream is processed to compute its hash.
+
+Finally, all the calculated hashes are aggregated and streamed as checksums.
+
+The [`pipeline`][pipeline] package handles data flow and parallel execution,
+ensuring efficient processing. The Data Flow Diagram (DFD) below visually
+represents the process:
+
+![Data Flow Diagram](./docs/dfd.png)
+
+By leveraging this pipeline-based approach, the tool efficiently computes
+checksums for large sets of files with minimal overhead.
+
+[pipeline]: https://pkg.go.dev/github.com/utilyre/summer/pkg/pipeline
