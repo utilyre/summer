@@ -127,7 +127,7 @@ func newMockFS(tb testing.TB, numFiles int) fs.FS {
 func generateRandomData(tb testing.TB) []byte {
 	tb.Helper()
 
-	size := randRange(1<<10, 1<<30) // [1kB, 1GB)
+	size := randRange(1<<10, 100<<20) // [1kB, 100MB)
 	data := make([]byte, size)
 	if _, err := crand.Read(data); err != nil {
 		tb.Fatal("generateRandomData():", err)
