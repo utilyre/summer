@@ -49,7 +49,7 @@ jobs:
       - run: sudo apt-get -y install fio hyperfine
 
       - run: mkdir -p db
-      - run: fio fio.ini
+      - run: fio .fio.ini
 
       - run: go mod download -x
       - run: go build -v ./cmd/summer
