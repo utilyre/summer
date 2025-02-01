@@ -1,9 +1,12 @@
 package summer_test
 
 import (
+	"bytes"
 	"context"
 	crand "crypto/rand"
+	"crypto/sha256"
 	"fmt"
+	"io"
 	"io/fs"
 	"math/rand/v2"
 	"runtime"
@@ -43,6 +46,8 @@ func BenchmarkSummer_Sum_recursive(b *testing.B) {
 	benchmarkSummer_Sum(b, true)
 }
 
+var globalChecksum summer.Checksum
+
 func benchmarkSummer_Sum(b *testing.B, recursive bool) {
 	ctx := context.Background()
 	b.ResetTimer()
@@ -78,7 +83,33 @@ func benchmarkSummer_Sum(b *testing.B, recursive bool) {
 	}
 }
 
-var globalChecksum summer.Checksum
+func BenchmarkSha256(b *testing.B) {
+	for range b.N {
+		data := generateRandomData(b)
+		r := bytes.NewReader(data)
+
+		hash := sha256.New()
+		if _, err := io.Copy(hash, r); err != nil {
+			b.Fatal("failed to copy:", err)
+		}
+	}
+}
+
+var globalBytes []byte
+
+func BenchmarkSha256_withSum(b *testing.B) {
+	for range b.N {
+		data := generateRandomData(b)
+		r := bytes.NewReader(data)
+
+		hash := sha256.New()
+		if _, err := io.Copy(hash, r); err != nil {
+			b.Fatal("failed to copy:", err)
+		}
+
+		globalBytes = hash.Sum(nil)
+	}
+}
 
 func newMockFS(tb testing.TB, numFiles int) fs.FS {
 	tb.Helper()
@@ -86,15 +117,22 @@ func newMockFS(tb testing.TB, numFiles int) fs.FS {
 	fsys := fstest.MapFS{}
 
 	for i := range numFiles {
-		size := randRange(1<<10, 1<<30) // [1kB, 1GB)
-		data := make([]byte, size)
-		if _, err := crand.Read(data); err != nil {
-			tb.Fatal("newMockFS:", err)
-		}
+		data := generateRandomData(tb)
 		fsys[fmt.Sprintf("file_%03d", i)] = &fstest.MapFile{Data: data}
 	}
 
 	return fsys
+}
+
+func generateRandomData(tb testing.TB) []byte {
+	tb.Helper()
+
+	size := randRange(1<<10, 1<<30) // [1kB, 1GB)
+	data := make([]byte, size)
+	if _, err := crand.Read(data); err != nil {
+		tb.Fatal("generateRandomData():", err)
+	}
+	return data
 }
 
 func randRange(min, max int) int {
