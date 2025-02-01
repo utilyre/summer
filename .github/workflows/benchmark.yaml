@@ -56,12 +56,12 @@ jobs:
 
       - run: >
           hyperfine
-          -w10
+          -w3
           --export-csv=summary.csv
           --export-json=summary.json
           --export-markdown=summary.md
           './summer generate -r db'
-          './summer generate -r --open-file-jobs=8 --digest-jobs=8 db'
+          './summer generate -r --open-file-jobs=4 --digest-jobs=4 db'
 
       - uses: actions/upload-artifact@v4
         with:
