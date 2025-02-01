@@ -1,0 +1,72 @@
+name: Benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  units:
+    name: Units
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.0"
+
+      - run: go install golang.org/x/perf/cmd/benchstat@latest
+
+      - run: go mod download -x
+      - run: >
+          go test
+          -v -run=^$
+          -count=10
+          -bench=.
+          -benchmem
+          ./...
+          | tee results.txt
+      - run: benchstat results.txt | tee summary.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: units
+          path: |
+            results.txt
+            summary.txt
+
+  cli:
+    name: CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.0"
+
+      - run: sudo apt-get -y install fio hyperfine
+
+      - run: mkdir -p db
+      - run: fio fio.ini
+
+      - run: go mod download -x
+      - run: go build -v ./cmd/summer
+
+      - run: >
+          hyperfine
+          -w10
+          --export-csv=summary.csv
+          --export-json=summary.json
+          --export-markdown=summary.md
+          './summer generate -r db'
+          './summer generate -r --open-file-jobs=8 --digest-jobs=8 db'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli
+          path: |
+            summary.csv
+            summary.json
+            summary.md
