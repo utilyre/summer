@@ -159,6 +159,10 @@ func (dp digestPipe) Pipe(ctx context.Context, in <-chan Checksum) <-chan Checks
 				continue
 			}
 
+			if err := cs.body.Close(); err != nil {
+				cs.Err = fmt.Errorf("digest %s: %w", cs.Name, err)
+			}
+
 			cs.Hash = hash.Sum(nil)
 
 			select {
