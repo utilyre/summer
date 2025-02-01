@@ -61,20 +61,20 @@ func benchmarkSummer_Sum(b *testing.B, recursive bool) {
 		}
 		b.StartTimer()
 
-		b.Logf("#%d: starting", i)
+		b.Logf("#%d: starting, num goroutines = %d", i, runtime.NumGoroutine())
 		checksums, err := s.Sum(ctx, ".")
 		if err != nil {
 			b.Error(err)
 		}
 
-		b.Logf("#%d: consuming results", i)
+		b.Logf("#%d: consuming results, num goroutines = %d", i, runtime.NumGoroutine())
 		var checksum summer.Checksum
 		for cs := range checksums {
 			checksum = cs
 		}
 		globalChecksum = checksum // to avoid compiler optimization
 
-		b.Logf("#%d: number of active goroutines: %d", i, runtime.NumGoroutine())
+		b.Logf("#%d: done, num goroutines = %d", i, runtime.NumGoroutine())
 	}
 }
 
