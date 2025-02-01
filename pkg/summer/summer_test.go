@@ -5,7 +5,7 @@ import (
 	crand "crypto/rand"
 	"fmt"
 	"io/fs"
-	"math/rand"
+	"math/rand/v2"
 	"runtime"
 	"testing"
 	"testing/fstest"
@@ -86,7 +86,7 @@ func newMockFS(tb testing.TB, numFiles int) fs.FS {
 	fsys := fstest.MapFS{}
 
 	for i := range numFiles {
-		size := (rand.Intn(1<<10-1) + 1) << 10 // [1kB, 1MB)
+		size := randRange(1<<10, 1<<30) // [1kB, 1GB)
 		data := make([]byte, size)
 		if _, err := crand.Read(data); err != nil {
 			tb.Fatal("newMockFS:", err)
@@ -95,4 +95,8 @@ func newMockFS(tb testing.TB, numFiles int) fs.FS {
 	}
 
 	return fsys
+}
+
+func randRange(min, max int) int {
+	return rand.N(max-min) + min
 }

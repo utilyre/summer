@@ -65,7 +65,7 @@ jobs:
         with:
           go-version: "1.23.0"
 
-      - run: apt install fio hyperfine
+      - run: sudo apt-get -y install fio hyperfine
 
       - run: mkdir -p db
       - run: fio fio.ini
