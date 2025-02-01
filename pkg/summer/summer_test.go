@@ -51,7 +51,7 @@ func benchmarkSummer_Sum(b *testing.B, recursive bool) {
 		b.Logf("#%d: setting up", i)
 		b.StopTimer()
 		s, err := summer.New(
-			summer.WithFS(newMockFS(b, 100)),
+			summer.WithFS(newMockFS(b, 1000)),
 			summer.WithRecursive(recursive),
 			summer.WithOpenFileJobs(8),
 			summer.WithDigestJobs(8),
