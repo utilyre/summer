@@ -1,2 +1,2 @@
-/benchmark/database
-/benchmark/.env
+/_bench/database
+/_bench/.env

@@ -46,12 +46,38 @@ jobs:
       - run: >
           go test -v -run=^$
           -count=10 -bench=. -benchmem -benchtime=100x
-          ./... | tee benchmark.txt
-      - run: benchstat benchmark.txt | tee summary.txt
+          ./... | tee results.txt
+      - run: benchstat results.txt | tee summary.txt
 
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark
           path: |
-            benchmark.txt
+            results.txt
             summary.txt
+
+  hyperfine:
+    name: Hyperfine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.0"
+
+      - run: apt install fio hyperfine
+
+      - run: mkdir -p db
+      - run: fio fio.ini
+
+      - run: go mod download -x
+      - run: go build -v ./cmd/summer
+
+      - run: >
+          hyperfine
+          -w10
+          --export-csv=results.csv
+          --export-json=results.json
+          --export-markdown=results.md
+          './summer generate -r db'
+          './summer generate -r --open-file-jobs=8 --digest-jobs=8 db'
