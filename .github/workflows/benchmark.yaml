@@ -54,22 +54,20 @@ jobs:
       - run: go mod download -x
       - run: go build -v ./cmd/summer
 
-      - run: mkdir -p sha256sum
       - run: >
           hyperfine
           -w3
-          --export-csv=sha256sum/summary.csv
-          --export-json=sha256sum/summary.json
-          --export-markdown=sha256sum/summary.md
+          --export-csv=sha256sum.csv
+          --export-json=sha256sum.json
+          --export-markdown=sha256sum.md
           'sha256sum db/*'
 
-      - run: mkdir -p summer
       - run: >
           hyperfine
           -w3
-          --export-csv=summer/summary.csv
-          --export-json=summer/summary.json
-          --export-markdown=summer/summary.md
+          --export-csv=summer.csv
+          --export-json=summer.json
+          --export-markdown=summer.md
           './summer generate db/*'
           './summer generate --open-file-jobs=8 --digest-jobs=8 db/*'
 
@@ -77,5 +75,9 @@ jobs:
         with:
           name: cli
           path: |
-            sha256sum
-            summer
+            sha256sum.csv
+            sha256sum.json
+            sha256sum.md
+            summer.csv
+            summer.json
+            summer.md
