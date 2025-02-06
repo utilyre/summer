@@ -56,6 +56,7 @@ func benchmarkSummer_Sum(b *testing.B, recursive bool) {
 		b.Logf("#%d: setting up", i)
 		b.StopTimer()
 		s, err := summer.New(
+			summer.WithAlgorithm(summer.AlgorithmSha256),
 			summer.WithFS(newMockFS(b, 100)),
 			summer.WithRecursive(recursive),
 			summer.WithOpenFileJobs(8),

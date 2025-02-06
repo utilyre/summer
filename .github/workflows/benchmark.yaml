@@ -8,8 +8,8 @@ on:
     branches: [main]
 
 jobs:
-  units:
-    name: Units
+  golang:
+    name: Golang
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: units
+          name: golang
           path: |
             results.txt
             summary.txt
@@ -54,19 +54,28 @@ jobs:
       - run: go mod download -x
       - run: go build -v ./cmd/summer
 
+      - run: mkdir -p sha256sum
       - run: >
           hyperfine
           -w3
-          --export-csv=summary.csv
-          --export-json=summary.json
-          --export-markdown=summary.md
-          './summer generate -r db'
-          './summer generate -r --open-file-jobs=4 --digest-jobs=4 db'
+          --export-csv=sha256sum/summary.csv
+          --export-json=sha256sum/summary.json
+          --export-markdown=sha256sum/summary.md
+          'sha256sum db/*'
+
+      - run: mkdir -p summer
+      - run: >
+          hyperfine
+          -w3
+          --export-csv=summer/summary.csv
+          --export-json=summer/summary.json
+          --export-markdown=summer/summary.md
+          './summer generate db/*'
+          './summer generate --open-file-jobs=8 --digest-jobs=8 db/*'
 
       - uses: actions/upload-artifact@v4
         with:
           name: cli
           path: |
-            summary.csv
-            summary.json
-            summary.md
+            sha256sum
+            summer
