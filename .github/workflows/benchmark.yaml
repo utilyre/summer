@@ -23,7 +23,7 @@ jobs:
       - run: >
           go test
           -v -run=^$
-          -count=10
+          -benchtime=10x
           -bench=.
           -benchmem
           ./...
